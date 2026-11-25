@@ -23,6 +23,7 @@ public class CommentVO {
     @Schema(description = "当前内容版本号") private Integer versionNo;
     @Schema(description = "回复数") private Long replyCount;
     @Schema(description = "点赞数") private Long likeCount;
+    @Schema(description = "点踩数") private Long dislikeCount;
     @Schema(description = "创建时间") private LocalDateTime createTime;
     @Schema(description = "更新时间") private LocalDateTime updateTime;
 }

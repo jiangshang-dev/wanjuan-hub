@@ -11,6 +11,7 @@ public final class InteractionDtos {
     public static class TargetRequest {
         @NotBlank @Pattern(regexp = "BLOG|FORUM|FORUM_POST|COMMENT|RESOURCE") @Schema(description = "目标类型", allowableValues = {"BLOG", "FORUM", "FORUM_POST", "COMMENT", "RESOURCE"}) private String targetType;
         @NotNull @Schema(description = "目标ID") private Long targetId;
+        @Pattern(regexp = "LIKE|DISLIKE") @Schema(description = "反应类型，默认LIKE", allowableValues = {"LIKE", "DISLIKE"}, defaultValue = "LIKE") private String reactionType = "LIKE";
     }
 
     @Data @Schema(description = "互动分页查询")

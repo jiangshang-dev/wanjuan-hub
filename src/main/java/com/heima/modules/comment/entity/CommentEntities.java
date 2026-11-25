@@ -22,6 +22,7 @@ public final class CommentEntities {
         private String auditReason;
         private Long replyCount;
         private Long likeCount;
+        private Long dislikeCount;
         private Integer deleted;
     }
 

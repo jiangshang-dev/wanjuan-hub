@@ -52,6 +52,7 @@ public final class ForumVos {
         @Schema(description = "公开跟帖数") private Long postCount;
         @Schema(description = "公开评论数") private Long commentCount;
         @Schema(description = "点赞数") private Long likeCount;
+        @Schema(description = "点踩数") private Long dislikeCount;
         @Schema(description = "收藏数") private Long favoriteCount;
         @Schema(description = "浏览量") private Long viewCount;
         @Schema(description = "创建时间") private LocalDateTime createTime;
@@ -76,6 +77,7 @@ public final class ForumVos {
         @Schema(description = "公开版本号") private Integer publishedVersionNo;
         @Schema(description = "当前内容版本号") private Integer versionNo;
         @Schema(description = "点赞数") private Long likeCount;
+        @Schema(description = "点踩数") private Long dislikeCount;
         @Schema(description = "创建时间") private LocalDateTime createTime;
         @Schema(description = "更新时间") private LocalDateTime updateTime;
     }
