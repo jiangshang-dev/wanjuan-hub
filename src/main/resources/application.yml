@@ -1,0 +1,120 @@
+server:
+  port: ${SERVER_PORT:8090}
+
+spring:
+  application:
+    name: wanjuan-hub
+  datasource:
+    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/wanjuan_hub?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
+  rabbitmq:
+    host: ${RABBITMQ_HOST:127.0.0.1}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    listener:
+      simple:
+        acknowledge-mode: manual
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  mail:
+    host: ${MAIL_HOST:smtp.163.com}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: ${MAIL_SSL:true}
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:true}
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+wanjuan:
+  jwt-secret: ${JWT_SECRET:}
+  jwt-access-expire-minutes: ${JWT_ACCESS_EXPIRE_MINUTES:30}
+  jwt-refresh-expire-days: ${JWT_REFRESH_EXPIRE_DAYS:7}
+  security:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174}
+    trust-forwarded-headers: ${TRUST_FORWARDED_HEADERS:false}
+  mail:
+    enabled: ${MAIL_ENABLED:false}
+    from: ${MAIL_FROM:}
+    personal: 万卷汇
+    code-expire-minutes: ${MAIL_CODE_EXPIRE_MINUTES:10}
+  sms:
+    enabled: ${SMS_ENABLED:false}
+  rustfs:
+    endpoint: ${RUSTFS_ENDPOINT:http://localhost:9000}
+    region: ${RUSTFS_REGION:us-east-1}
+    public-bucket: ${RUSTFS_PUBLIC_BUCKET:wanjuan-public}
+    private-bucket: ${RUSTFS_PRIVATE_BUCKET:wanjuan-private}
+    audit-bucket: ${RUSTFS_AUDIT_BUCKET:wanjuan-audit}
+    access-key: ${RUSTFS_ACCESS_KEY:}
+    secret-key: ${RUSTFS_SECRET_KEY:}
+  payment:
+    alipay:
+      enabled: ${ALIPAY_ENABLED:false}
+      app-id: ${ALIPAY_APP_ID:}
+      private-key: ${ALIPAY_PRIVATE_KEY:}
+      alipay-public-key: ${ALIPAY_PUBLIC_KEY:}
+      gateway: ${ALIPAY_GATEWAY:https://openapi.alipay.com/gateway.do}
+      notify-url: ${ALIPAY_NOTIFY_URL:}
+      return-url: ${ALIPAY_RETURN_URL:}
+    wechat:
+      enabled: ${WECHAT_PAY_ENABLED:false}
+      app-id: ${WECHAT_PAY_APP_ID:}
+      mch-id: ${WECHAT_PAY_MCH_ID:}
+      api-v3-key: ${WECHAT_PAY_API_V3_KEY:}
+      merchant-serial-number: ${WECHAT_PAY_SERIAL_NUMBER:}
+      private-key-path: ${WECHAT_PAY_PRIVATE_KEY_PATH:}
+      platform-certificate-path: ${WECHAT_PAY_PLATFORM_CERT_PATH:}
+      notify-url: ${WECHAT_PAY_NOTIFY_URL:}
+
+aliyun:
+  aliyun-green:
+    enabled: ${ALIYUN_GREEN_ENABLED:false}
+    access-key-id: ${ALIYUN_GREEN_ACCESS_KEY_ID:}
+    access-key-secret: ${ALIYUN_GREEN_ACCESS_KEY_SECRET:}
+    endpoint: ${ALIYUN_GREEN_ENDPOINT:green-cip.cn-shanghai.aliyuncs.com}
