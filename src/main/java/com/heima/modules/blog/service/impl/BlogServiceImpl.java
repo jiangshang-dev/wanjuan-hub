@@ -30,8 +30,10 @@ import com.heima.modules.blog.vo.BlogArticleVO;
 import com.heima.modules.blog.vo.BlogCategoryVO;
 import com.heima.modules.blog.vo.BlogVersionVO;
 import com.heima.modules.file.service.FileService;
+import com.heima.modules.search.event.SearchIndexRefreshEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.json.JsonMapper;
@@ -58,6 +60,7 @@ public class BlogServiceImpl implements BlogService {
     private final BlogConverter converter;
     private final FileService fileService;
     private final AuditService auditService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional(readOnly = true)
@@ -151,6 +154,7 @@ public class BlogServiceImpl implements BlogService {
         int updated = articleMapper.update(null, new LambdaUpdateWrapper<BlogArticle>().eq(BlogArticle::getId, id)
                 .eq(BlogArticle::getAuthorId, userId).eq(BlogArticle::getDeleted, 0).set(BlogArticle::getDeleted, 1));
         if (updated == 0) throw new ServiceException(409, "文章状态已变化");
+        eventPublisher.publishEvent(new SearchIndexRefreshEvent("BLOG", id));
     }
 
     @Override
@@ -218,6 +222,7 @@ public class BlogServiceImpl implements BlogService {
         }
         articleMapper.update(null, new LambdaUpdateWrapper<BlogArticle>().eq(BlogArticle::getId, id).eq(BlogArticle::getDeleted, 0)
                 .set(BlogArticle::getStatus, request.getStatus()).set(BlogArticle::getAuditReason, request.getReason()));
+        eventPublisher.publishEvent(new SearchIndexRefreshEvent("BLOG", id));
     }
 
     @Override

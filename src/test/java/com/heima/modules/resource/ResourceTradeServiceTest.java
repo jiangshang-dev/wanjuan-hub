@@ -7,10 +7,9 @@ import com.heima.modules.resource.entity.ResourceVersion;
 import com.heima.modules.resource.enums.AccessType;
 import com.heima.modules.resource.mapper.ResourceEntitlementMapper;
 import com.heima.modules.resource.mapper.ResourceInfoMapper;
-import com.heima.modules.resource.mapper.ResourcePointAccountMapper;
-import com.heima.modules.resource.mapper.ResourcePointTransactionMapper;
 import com.heima.modules.resource.mapper.ResourceVersionMapper;
 import com.heima.modules.resource.service.impl.ResourceTradeServiceImpl;
+import com.heima.modules.points.service.PointsService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -33,8 +32,7 @@ class ResourceTradeServiceTest {
     @Mock private ResourceInfoMapper resourceMapper;
     @Mock private ResourceVersionMapper versionMapper;
     @Mock private ResourceEntitlementMapper entitlementMapper;
-    @Mock private ResourcePointAccountMapper pointAccountMapper;
-    @Mock private ResourcePointTransactionMapper pointTransactionMapper;
+    @Mock private PointsService pointsService;
     @InjectMocks private ResourceTradeServiceImpl tradeService;
 
     @Test
@@ -55,7 +53,7 @@ class ResourceTradeServiceTest {
 
         verify(entitlementMapper, never()).grantIgnore(any(), any(), anyString(), anyString(), any(), any());
         verify(entitlementMapper, never()).update(isNull(), any());
-        verify(pointAccountMapper, never()).deduct(any(), any());
+        verify(pointsService, never()).redeem(any(), any(), any());
     }
 
     @Test
@@ -67,6 +65,26 @@ class ResourceTradeServiceTest {
         ServiceException error = assertThrows(ServiceException.class, () -> tradeService.getPaidPurchase(1L, 8L));
 
         assertEquals(409, error.getCode());
+    }
+
+    @Test
+    void pointsRedemptionUsesUnifiedPointsAccount() {
+        ResourceVersion pointsVersion = version();
+        pointsVersion.setAccessType(AccessType.POINTS.name());
+        pointsVersion.setPrice(null);
+        pointsVersion.setPointsPrice(30);
+        ResourceEntitlement granted = new ResourceEntitlement();
+        granted.setStatus("ACTIVE");
+        granted.setSourceType("POINTS");
+        when(resourceMapper.selectOne(any())).thenReturn(resource());
+        when(versionMapper.selectOne(any())).thenReturn(pointsVersion);
+        when(entitlementMapper.selectCount(any())).thenReturn(0L);
+        when(entitlementMapper.selectOne(any())).thenReturn(granted);
+
+        tradeService.redeemPoints(8L, 1L);
+
+        verify(pointsService).redeem(8L, 1L, 30);
+        verify(entitlementMapper).grantIgnore(8L, 1L, "POINTS", null, null, 30);
     }
 
     private ResourceInfo resource() {

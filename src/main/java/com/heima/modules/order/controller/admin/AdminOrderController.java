@@ -32,6 +32,7 @@ public class AdminOrderController {
 
     @GetMapping("/{orderNo}")
     @Operation(summary = "查看订单、支付及退款详情")
+    @PreAuthorize("hasAuthority('order:detail')")
     public R<OrderVO> detail(@PathVariable String orderNo) {
         return R.ok(orderService.adminDetail(orderNo));
     }

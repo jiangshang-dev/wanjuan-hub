@@ -35,8 +35,10 @@ import com.heima.modules.resource.service.ResourceService;
 import com.heima.modules.resource.service.ResourceUrlValidator;
 import com.heima.modules.resource.vo.ResourceVO;
 import com.heima.modules.resource.vo.ResourceVersionVO;
+import com.heima.modules.search.event.SearchIndexRefreshEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.type.TypeReference;
@@ -67,6 +69,7 @@ public class ResourceServiceImpl implements ResourceService {
     private final ResourceUrlValidator urlValidator;
     private final FileService fileService;
     private final AuditService auditService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional(readOnly = true)
@@ -158,6 +161,7 @@ public class ResourceServiceImpl implements ResourceService {
                 .eq(ResourceInfo::getAuthorId, userId).eq(ResourceInfo::getDeleted, 0)
                 .set(ResourceInfo::getDeleted, 1).set(ResourceInfo::getOnline, 0));
         if (updated == 0) throw new ServiceException(409, "资源状态已变化");
+        eventPublisher.publishEvent(new SearchIndexRefreshEvent("RESOURCE", id));
     }
 
     @Override

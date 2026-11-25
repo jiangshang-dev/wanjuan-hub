@@ -2,6 +2,7 @@ package com.heima.modules.search.listener;
 
 import com.heima.modules.audit.event.AuditCompletedEvent;
 import com.heima.modules.blog.event.BlogPublishedEvent;
+import com.heima.modules.search.event.SearchIndexRefreshEvent;
 import com.heima.modules.search.service.SearchIndexService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,12 @@ public class SearchEventListener {
             default -> null;
         };
         if (type != null) synchronize(type, event.bizId());
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+    public void onIndexRefresh(SearchIndexRefreshEvent event) {
+        synchronize(event.contentType(), event.contentId());
     }
 
     private void synchronize(String type, Long id) {

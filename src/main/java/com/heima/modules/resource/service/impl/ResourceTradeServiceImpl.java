@@ -5,15 +5,12 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.heima.exception.ServiceException;
 import com.heima.modules.resource.entity.ResourceEntitlement;
 import com.heima.modules.resource.entity.ResourceInfo;
-import com.heima.modules.resource.entity.ResourcePointAccount;
-import com.heima.modules.resource.entity.ResourcePointTransaction;
 import com.heima.modules.resource.entity.ResourceVersion;
 import com.heima.modules.resource.enums.AccessType;
 import com.heima.modules.resource.mapper.ResourceEntitlementMapper;
 import com.heima.modules.resource.mapper.ResourceInfoMapper;
-import com.heima.modules.resource.mapper.ResourcePointAccountMapper;
-import com.heima.modules.resource.mapper.ResourcePointTransactionMapper;
 import com.heima.modules.resource.mapper.ResourceVersionMapper;
+import com.heima.modules.points.service.PointsService;
 import com.heima.modules.resource.service.ResourceTradeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,8 +26,7 @@ public class ResourceTradeServiceImpl implements ResourceTradeService {
     private final ResourceInfoMapper resourceMapper;
     private final ResourceVersionMapper versionMapper;
     private final ResourceEntitlementMapper entitlementMapper;
-    private final ResourcePointAccountMapper pointAccountMapper;
-    private final ResourcePointTransactionMapper pointTransactionMapper;
+    private final PointsService pointsService;
 
     @Override
     @Transactional(readOnly = true)
@@ -90,23 +86,13 @@ public class ResourceTradeServiceImpl implements ResourceTradeService {
         if (resource.getAuthorId().equals(userId) || hasActive(userId, resourceId)) throw new ServiceException(409, "已拥有该资源，请勿重复兑换");
         Integer points = version.getPointsPrice();
         if (points == null || points <= 0) throw new ServiceException(409, "资源积分价格状态异常");
-        pointAccountMapper.createIgnore(userId);
-        ResourcePointAccount account = pointAccountMapper.selectForUpdate(userId);
-        if (account == null) throw new ServiceException(500, "积分账户初始化失败");
         if (hasActive(userId, resourceId)) throw new ServiceException(409, "已拥有该资源，请勿重复兑换");
-        if (pointAccountMapper.deduct(userId, points) == 0) throw new ServiceException(409, "积分余额不足");
+        pointsService.redeem(userId, resourceId, points);
         entitlementMapper.grantIgnore(userId, resourceId, "POINTS", null, null, points);
         ResourceEntitlement granted = entitlement(userId, resourceId);
         if (granted == null || !"ACTIVE".equals(granted.getStatus()) || !"POINTS".equals(granted.getSourceType())) {
             throw new ServiceException(409, "资源权益已变化，兑换未生效");
         }
-        ResourcePointTransaction transaction = new ResourcePointTransaction();
-        transaction.setUserId(userId);
-        transaction.setResourceId(resourceId);
-        transaction.setChangeAmount(-points);
-        transaction.setBalanceAfter(account.getBalance() - points);
-        transaction.setBizType("RESOURCE_REDEEM");
-        pointTransactionMapper.insert(transaction);
     }
 
     private ResourceInfo publicResource(Long resourceId) {

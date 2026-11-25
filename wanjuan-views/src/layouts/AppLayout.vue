@@ -12,8 +12,11 @@ const auth = useAuthStore()
 const loggingOut = ref(false)
 const selectedKeys = computed(() => {
   if (route.name === 'blog-detail') return ['blogs']
+  if (route.name === 'resource-detail') return ['resources']
+  if (['resource-create', 'resource-edit', 'resource-versions', 'resource-entitlements'].includes(route.name)) return ['my-resources']
   if (['forum-topic', 'forum-topic-create', 'forum-topic-edit'].includes(route.name)) return ['forum']
   if (['blog-create', 'blog-edit', 'blog-versions'].includes(route.name)) return ['my-blogs']
+  if (route.name === 'order-detail') return ['orders']
   return [route.name]
 })
 const avatarText = computed(() => displayName(auth.user).slice(0, 1).toUpperCase())
@@ -48,6 +51,8 @@ async function logout() {
           <a-menu-item key="home">首页</a-menu-item>
           <a-menu-item key="forum">技术论坛</a-menu-item>
           <a-menu-item key="blogs">技术博客</a-menu-item>
+          <a-menu-item key="resources">资源中心</a-menu-item>
+          <a-menu-item v-if="auth.isLoggedIn" key="my-resources">我的发布</a-menu-item>
           <a-menu-item v-if="auth.isLoggedIn" key="my-blogs">我的博客</a-menu-item>
           <a-menu-item v-if="auth.isLoggedIn" key="profile">个人中心</a-menu-item>
           <a-menu-item v-if="auth.isLoggedIn" key="security">账号安全</a-menu-item>
@@ -62,6 +67,9 @@ async function logout() {
               <template #overlay>
                 <a-menu>
                   <a-menu-item key="my-blogs" @click="router.push('/my/blogs')">我的博客</a-menu-item>
+                  <a-menu-item key="my-resources" @click="router.push('/my/resources')">我的发布</a-menu-item>
+                  <a-menu-item key="orders" @click="router.push('/my/orders')">我的订单</a-menu-item>
+                  <a-menu-item key="resource-entitlements" @click="router.push('/my/resources/entitlements')">我的已购与授权</a-menu-item>
                   <a-menu-item key="activity" @click="router.push('/my/activity')">我的互动</a-menu-item>
                   <a-menu-item key="profile" @click="router.push('/profile')">个人资料</a-menu-item>
                   <a-menu-item key="security" @click="router.push('/security')">账号安全</a-menu-item>
