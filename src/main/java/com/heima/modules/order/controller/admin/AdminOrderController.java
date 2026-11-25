@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -26,6 +27,7 @@ public class AdminOrderController {
 
     @GetMapping
     @Operation(summary = "分页查询全部订单")
+    @PreAuthorize("hasAuthority('order:list')")
     public R<PageResult<OrderVO>> page(@Valid @ModelAttribute OrderDtos.Query query) {
         return R.ok(orderService.adminPage(query));
     }

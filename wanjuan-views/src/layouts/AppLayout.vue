@@ -17,6 +17,7 @@ const selectedKeys = computed(() => {
   if (['forum-topic', 'forum-topic-create', 'forum-topic-edit'].includes(route.name)) return ['forum']
   if (['blog-create', 'blog-edit', 'blog-versions'].includes(route.name)) return ['my-blogs']
   if (route.name === 'order-detail') return ['orders']
+  if (['profile', 'security', 'activity', 'membership', 'messages'].includes(route.name)) return ['user-center']
   return [route.name]
 })
 const avatarText = computed(() => displayName(auth.user).slice(0, 1).toUpperCase())
