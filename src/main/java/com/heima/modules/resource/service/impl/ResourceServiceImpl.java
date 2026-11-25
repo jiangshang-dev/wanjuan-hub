@@ -235,6 +235,7 @@ public class ResourceServiceImpl implements ResourceService {
             update.set(ResourceInfo::getOnline, 0);
         }
         resourceMapper.update(null, update);
+        eventPublisher.publishEvent(new SearchIndexRefreshEvent("RESOURCE", id));
     }
 
     private void validate(ResourceSaveDTO request, Long userId) {
