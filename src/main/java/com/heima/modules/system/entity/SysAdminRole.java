@@ -1,0 +1,13 @@
+package com.heima.modules.system.entity;
+
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
+import java.time.LocalDateTime;
+
+@Data
+@TableName("sys_admin_role")
+public class SysAdminRole {
+    private Long adminId;
+    private Long roleId;
+    private LocalDateTime createTime;
+}

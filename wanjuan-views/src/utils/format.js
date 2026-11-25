@@ -1,12 +1,12 @@
 import dayjs from 'dayjs'
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 
 export const idOf = (value) => (value === null || value === undefined ? '' : String(value))
 
 export function displayName(user) {
   if (!user) return '社区用户'
-  if (user.nickname?.trim()) return user.nickname
-  const id = idOf(user.id || user.userId)
-  return id ? `用户${id.slice(-6)}` : '社区用户'
+  return user.nickname?.trim() || user.username || user.account || '社区用户'
 }
 
 export function formatDate(value, withTime = false) {
@@ -15,25 +15,14 @@ export function formatDate(value, withTime = false) {
   return date.isValid() ? date.format(withTime ? 'YYYY-MM-DD HH:mm' : 'YYYY-MM-DD') : '-'
 }
 
-export function formatMoney(value) {
-  const number = Number(value)
-  return Number.isFinite(number) ? number.toFixed(2) : '0.00'
-}
-
-export function listResult(result) {
-  const data = result?.data ?? result ?? {}
-  const records = data.records || data.list || data.rows || data.items || (Array.isArray(data) ? data : [])
-  return {
-    records,
-    total: Number(data.total ?? data.totalCount ?? records.length),
-  }
-}
-
 export function errorText(error) {
+  if (!error?.response && error?.message === 'Network Error') return '网络连接失败，请检查后端服务是否启动'
+  if (error?.code === 'ECONNABORTED') return '请求超时，请稍后重试'
   return error?.response?.data?.message || error?.response?.data?.msg || error?.message || '请求失败，请稍后重试'
 }
 
-export function renderMarkdown(marked, DOMPurify, content) {
+export function renderMarkdown(content) {
   if (!content) return ''
-  return DOMPurify.sanitize(marked.parse(content, { async: false, breaks: true, gfm: true }))
+  const html = marked.parse(content, { async: false, breaks: true, gfm: true })
+  return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } })
 }

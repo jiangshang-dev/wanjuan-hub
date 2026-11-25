@@ -1,15 +1,20 @@
 package com.heima.config;
 
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
-import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import tools.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.ser.std.ToStringSerializer;
 
 @Configuration
 public class JacksonConfig {
 
     @Bean
-    public Jackson2ObjectMapperBuilderCustomizer longIdSerializerCustomizer() {
-        return builder -> builder.serializerByType(Long.class, ToStringSerializer.instance);
+    public JsonMapperBuilderCustomizer longIdSerializerCustomizer() {
+        return builder -> {
+            SimpleModule module = new SimpleModule();
+            module.addSerializer(Long.class, ToStringSerializer.instance);
+            builder.addModule(module);
+        };
     }
 }

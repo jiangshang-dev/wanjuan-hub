@@ -38,6 +38,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(R.fail(403, "没有操作权限"));
     }
 
+    @ExceptionHandler(io.jsonwebtoken.JwtException.class)
+    public ResponseEntity<R<Void>> invalidToken(io.jsonwebtoken.JwtException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(R.fail(401, "登录状态已失效"));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<R<Void>> error(Exception e) {
         log.error("Unhandled request exception", e);

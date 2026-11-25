@@ -1,5 +1,5 @@
-const ACCESS_TOKEN_KEY = 'wanjuan_access_token'
-const REFRESH_TOKEN_KEY = 'wanjuan_refresh_token'
+const ACCESS_TOKEN_KEY = 'wanjuan_views_access_token'
+const REFRESH_TOKEN_KEY = 'wanjuan_views_refresh_token'
 
 export function getAccessToken() {
   return localStorage.getItem(ACCESS_TOKEN_KEY) || ''
