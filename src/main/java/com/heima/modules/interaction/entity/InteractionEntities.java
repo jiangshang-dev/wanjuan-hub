@@ -13,6 +13,7 @@ public final class InteractionEntities {
         private Long userId;
         private String targetType;
         private Long targetId;
+        private String reactionType;
     }
 
     @Data @TableName("content_favorite") @EqualsAndHashCode(callSuper = true)

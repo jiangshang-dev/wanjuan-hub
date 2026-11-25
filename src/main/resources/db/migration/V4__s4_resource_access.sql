@@ -41,7 +41,7 @@ CREATE TABLE resource_info
     KEY idx_resource_author_created (author_id, deleted, create_time),
     KEY idx_resource_public (deleted, online, invalid, published_version_no, category_id),
     KEY idx_resource_status_updated (status, deleted, update_time),
-    CONSTRAINT fk_resource_category FOREIGN KEY (category_id) REFERENCES resource_category
+    CONSTRAINT fk_resource_category FOREIGN KEY (category_id) REFERENCES resource_category (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE resource_version
@@ -65,7 +65,7 @@ CREATE TABLE resource_version
     PRIMARY KEY (id),
     UNIQUE KEY uk_resource_version (resource_id, version_no),
     KEY idx_resource_version_status (resource_id, status),
-    CONSTRAINT fk_resource_version_resource FOREIGN KEY (resource_id) REFERENCES resource_info
+    CONSTRAINT fk_resource_version_resource FOREIGN KEY (resource_id) REFERENCES resource_info (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE resource_disk_type
@@ -98,8 +98,8 @@ CREATE TABLE resource_link
     update_time               DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     KEY idx_resource_link_version (resource_id, version_no, status, sort_order, id),
-    CONSTRAINT fk_resource_link_resource FOREIGN KEY (resource_id) REFERENCES resource_info,
-    CONSTRAINT fk_resource_link_disk FOREIGN KEY (disk_type_id) REFERENCES resource_disk_type
+    CONSTRAINT fk_resource_link_resource FOREIGN KEY (resource_id) REFERENCES resource_info (id),
+    CONSTRAINT fk_resource_link_disk FOREIGN KEY (disk_type_id) REFERENCES resource_disk_type (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE resource_tag_relation
@@ -112,8 +112,8 @@ CREATE TABLE resource_tag_relation
     PRIMARY KEY (id),
     UNIQUE KEY uk_resource_tag_relation (resource_id, tag_id),
     KEY idx_resource_tag_relation_tag (tag_id, resource_id),
-    CONSTRAINT fk_resource_tag_resource FOREIGN KEY (resource_id) REFERENCES resource_info,
-    CONSTRAINT fk_resource_tag_tag FOREIGN KEY (tag_id) REFERENCES resource_tag
+    CONSTRAINT fk_resource_tag_resource FOREIGN KEY (resource_id) REFERENCES resource_info (id),
+    CONSTRAINT fk_resource_tag_tag FOREIGN KEY (tag_id) REFERENCES resource_tag (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE content_resource_relation
@@ -127,7 +127,7 @@ CREATE TABLE content_resource_relation
     PRIMARY KEY (id),
     UNIQUE KEY uk_content_resource (content_type, content_id, resource_id),
     KEY idx_content_resource_resource (resource_id, content_type, content_id),
-    CONSTRAINT fk_content_resource_resource FOREIGN KEY (resource_id) REFERENCES resource_info
+    CONSTRAINT fk_content_resource_resource FOREIGN KEY (resource_id) REFERENCES resource_info (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE resource_entitlement
@@ -150,7 +150,7 @@ CREATE TABLE resource_entitlement
     UNIQUE KEY uk_resource_entitlement_order (source_type, source_order_no),
     KEY idx_resource_entitlement_resource (resource_id, status, user_id),
     KEY idx_resource_entitlement_user_created (user_id, status, create_time),
-    CONSTRAINT fk_resource_entitlement_resource FOREIGN KEY (resource_id) REFERENCES resource_info
+    CONSTRAINT fk_resource_entitlement_resource FOREIGN KEY (resource_id) REFERENCES resource_info (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE resource_access_record
@@ -165,7 +165,7 @@ CREATE TABLE resource_access_record
     PRIMARY KEY (id),
     KEY idx_resource_access_user (user_id, resource_id, create_time),
     KEY idx_resource_access_resource (resource_id, target_type, target_id, create_time),
-    CONSTRAINT fk_resource_access_resource FOREIGN KEY (resource_id) REFERENCES resource_info
+    CONSTRAINT fk_resource_access_resource FOREIGN KEY (resource_id) REFERENCES resource_info (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE resource_invalid_report
@@ -185,8 +185,8 @@ CREATE TABLE resource_invalid_report
     KEY idx_resource_invalid_status (status, create_time, id),
     KEY idx_resource_invalid_resource (resource_id, status, create_time),
     KEY idx_resource_invalid_reporter (reporter_id, create_time),
-    CONSTRAINT fk_resource_invalid_resource FOREIGN KEY (resource_id) REFERENCES resource_info,
-    CONSTRAINT fk_resource_invalid_link FOREIGN KEY (link_id) REFERENCES resource_link
+    CONSTRAINT fk_resource_invalid_resource FOREIGN KEY (resource_id) REFERENCES resource_info (id),
+    CONSTRAINT fk_resource_invalid_link FOREIGN KEY (link_id) REFERENCES resource_link (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE resource_point_account
@@ -212,7 +212,7 @@ CREATE TABLE resource_point_transaction
     PRIMARY KEY (id),
     UNIQUE KEY uk_resource_point_biz (user_id, biz_type, resource_id),
     KEY idx_resource_point_created (user_id, create_time, id),
-    CONSTRAINT fk_resource_point_resource FOREIGN KEY (resource_id) REFERENCES resource_info
+    CONSTRAINT fk_resource_point_resource FOREIGN KEY (resource_id) REFERENCES resource_info (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO resource_disk_type(code, name, allowed_hosts, sort_order)

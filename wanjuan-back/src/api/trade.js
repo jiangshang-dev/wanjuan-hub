@@ -6,7 +6,24 @@ export const adminOrderApi = {
 }
 
 export const adminPaymentApi = {
+  list: (params) => request.get('/api/admin/payments', { params }),
+  detail: (paymentNo) => request.get(`/api/admin/payments/${encodeURIComponent(paymentNo)}`),
   reconcile: (orderNo) => request.post(`/api/admin/payments/${encodeURIComponent(orderNo)}/reconcile`),
+}
+
+export const adminPaymentNotificationApi = {
+  list: (params) => request.get('/api/admin/payment-notifications', { params }),
+  detail: (notificationId) => request.get(`/api/admin/payment-notifications/${encodeURIComponent(notificationId)}`),
+}
+
+export const adminReconciliationApi = {
+  list: (params) => request.get('/api/admin/reconciliations', { params }),
+  detail: (reconciliationNo) => request.get(`/api/admin/reconciliations/${encodeURIComponent(reconciliationNo)}`),
+}
+
+export const adminEntitlementApi = {
+  list: (params) => request.get('/api/admin/resource-entitlements', { params }),
+  detail: (id) => request.get(`/api/admin/resource-entitlements/${encodeURIComponent(id)}`),
 }
 
 export const adminRefundApi = {

@@ -4,6 +4,7 @@ import com.heima.modules.audit.entity.AuditTask;
 import com.heima.modules.audit.enums.AuditStatus;
 import com.heima.modules.audit.event.AuditCompletedEvent;
 import com.heima.modules.audit.mapper.AuditTaskMapper;
+import com.heima.modules.message.event.UserNotificationEvent;
 import com.heima.modules.message.service.MessageService;
 import com.heima.modules.payment.event.PaymentCompletedEvent;
 import com.heima.modules.points.event.PointsRewardedEvent;
@@ -54,6 +55,17 @@ public class MessageEventListener {
                     "TRADE_ORDER", event.orderNo(), "PAYMENT_NOTICE:" + event.action() + ":" + event.orderNo());
         } catch (Exception ex) {
             log.error("Failed to send payment notification, orderNo={}", event.orderNo(), ex);
+        }
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+    public void onUserNotification(UserNotificationEvent event) {
+        try {
+            messageService.notify(event.userId(), event.type(), event.title(), event.content(),
+                    event.bizType(), event.bizId(), event.dedupKey());
+        } catch (Exception ex) {
+            log.error("Failed to send user notification, type={}, bizId={}", event.type(), event.bizId(), ex);
         }
     }
 

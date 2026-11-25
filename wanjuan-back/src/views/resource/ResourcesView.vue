@@ -6,7 +6,7 @@ import { ReloadOutlined, SearchOutlined } from '@ant-design/icons-vue'
 import { adminResourceApi, adminResourceCategoryApi } from '../../api/resource'
 import { useTable } from '../../composables/useTable'
 import { accessTypeText, resourcePrice, resourceStatus, resourceStatusOptions } from '../../utils/resource'
-import { errorText, formatDate, idOf, pageResult } from '../../utils'
+import { errorText, formatDate, idOf } from '../../utils'
 
 const router = useRouter()
 const filters = reactive({ keyword: '', status: undefined, categoryId: undefined })
@@ -52,7 +52,8 @@ function resetFilters() { Object.assign(filters, { keyword: '', status: undefine
 onMounted(async () => {
   load()
   try {
-    categories.value = pageResult(await adminResourceCategoryApi.list({ page: 1, size: 100 })).records
+    const data = await adminResourceCategoryApi.publicList()
+    categories.value = Array.isArray(data) ? data : []
   } catch (error) {
     message.error(errorText(error))
   }

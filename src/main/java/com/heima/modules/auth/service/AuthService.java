@@ -141,7 +141,8 @@ public class AuthService {
         return new MeResponse(user.getId(),user.getUsername(),user.getEmail(),user.getPhone(),
                 p.getNickname(),avatar,p.getAvatarFileId(),p.getSignature(),p.getBirthday(),p.getGender(),
                 p.getPendingNickname(),pendingAvatar,p.getPendingAvatarFileId(),p.getPendingSignature(),
-                p.getPendingRemoveAvatar(),p.getProfileAuditStatus(),p.getProfileAuditReason());
+                p.getPendingRemoveAvatar(),p.getProfileAuditStatus(),p.getProfileAuditReason(),
+                p.getAllowLike() == null || p.getAllowLike(), p.getAllowDislike() == null || p.getAllowDislike());
     }
 
     private String avatarUrl(Long fileId,String fallback) {

@@ -33,6 +33,15 @@ public final class PointsDtos {
         @NotNull @Schema(description = "排序") private Integer sortOrder = 0;
     }
 
+    @Data @Schema(description = "连续签到奖励档位")
+    public static class StreakRuleRequest {
+        @NotNull @Min(1) @Max(3650) @Schema(description = "连续签到第N天") private Integer streakDay;
+        @NotNull @Min(0) @Schema(description = "该档总奖励积分") private Integer points;
+        @NotNull @Min(0) @Schema(description = "该档总奖励经验") private Integer experience;
+        @NotNull @Min(0) @Max(1) @Schema(description = "状态：0停用，1启用") private Integer status;
+        @Size(max = 500) @Schema(description = "说明") private String remark = "";
+    }
+
     @Data
     public static class AdjustmentRequest {
         @NotNull @Schema(description = "用户ID") private Long userId;

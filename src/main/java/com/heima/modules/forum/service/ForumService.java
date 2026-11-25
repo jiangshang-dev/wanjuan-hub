@@ -36,9 +36,11 @@ import com.heima.modules.forum.vo.ForumVos.BoardVO;
 import com.heima.modules.forum.vo.ForumVos.ModeratorVO;
 import com.heima.modules.forum.vo.ForumVos.PostVO;
 import com.heima.modules.forum.vo.ForumVos.TopicVO;
+import com.heima.modules.search.event.SearchIndexRefreshEvent;
 import com.heima.modules.system.mapper.SysAdminMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,6 +68,7 @@ public class ForumService {
     private final SysAdminMapper adminMapper;
     private final FileService fileService;
     private final ContentAuditService auditService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public List<BoardVO> publicBoards() {
@@ -331,6 +334,7 @@ public class ForumService {
         topicMapper.update(null, new LambdaUpdateWrapper<Topic>().eq(Topic::getId, id).eq(Topic::getDeleted, 0)
                 .set(Topic::getStatus, request.getStatus()).set(Topic::getAuditReason, request.getReason()));
         adjustTopicPublicCount(topic, wasPublic, "PUBLISHED".equals(request.getStatus()));
+        eventPublisher.publishEvent(new SearchIndexRefreshEvent("FORUM_TOPIC", id));
     }
 
     @Transactional
@@ -558,6 +562,7 @@ public class ForumService {
                 .eq(Topic::getDeleted, 0).eq(owned, Topic::getAuthorId, topic.getAuthorId()).set(Topic::getDeleted, 1);
         if (topicMapper.update(null, update) == 0) throw new ServiceException(409, "主题状态已变化");
         if (wasPublic) changeBoardTopicCount(topic.getBoardId(), -1);
+        eventPublisher.publishEvent(new SearchIndexRefreshEvent("FORUM_TOPIC", topic.getId()));
     }
 
     private void deletePostInternal(Post post, boolean owned) {

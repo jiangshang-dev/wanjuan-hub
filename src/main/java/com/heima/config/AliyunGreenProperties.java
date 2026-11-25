@@ -9,14 +9,11 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "aliyun.aliyun-green")
 public class AliyunGreenProperties {
 
-    /** 是否启用阿里云内容安全 */
+    // 是否启用阿里云内容安全
     private boolean enabled = false;
-
     private String accessKeyId;
-
     private String accessKeySecret;
-
-    /** 例如 green-cip.cn-shanghai.aliyuncs.com */
+    // 例如 green-cip.cn-shanghai.aliyuncs.com
     private String endpoint = "green-cip.cn-shanghai.aliyuncs.com";
 
 }

@@ -19,5 +19,9 @@ public class BlogArticle extends BaseEntity {
     private Integer publishedVersionNo;
     private String auditReason;
     private Long viewCount;
+    private Long likeCount;
+    private Long dislikeCount;
+    private Long favoriteCount;
+    private Long commentCount;
     private Integer deleted;
 }

@@ -26,6 +26,8 @@ import com.heima.modules.interaction.mapper.InteractionMappers.FollowMapper;
 import com.heima.modules.interaction.mapper.InteractionMappers.LikeMapper;
 import com.heima.modules.interaction.vo.InteractionVos.FollowVO;
 import com.heima.modules.interaction.vo.InteractionVos.TargetVO;
+import com.heima.modules.message.event.UserNotificationEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.dao.DuplicateKeyException;
@@ -44,6 +46,7 @@ public class InteractionService {
     private final TopicMapper topicMapper;
     private final PostMapper postMapper;
     private final CommentMapper commentMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void like(TargetRequest request, Long userId) {
@@ -58,6 +61,7 @@ public class InteractionService {
             throw new ServiceException(409, "不能重复点赞");
         }
         changeTargetCount(request.getTargetType(), request.getTargetId(), true, 1);
+        notifyTarget(request.getTargetType(), request.getTargetId(), userId, "点赞", "LIKE");
     }
 
     @Transactional
@@ -80,6 +84,7 @@ public class InteractionService {
             throw new ServiceException(409, "不能重复收藏");
         }
         changeTargetCount(request.getTargetType(), request.getTargetId(), false, 1);
+        notifyTarget(request.getTargetType(), request.getTargetId(), userId, "收藏", "FAVORITE");
     }
 
     @Transactional
@@ -118,6 +123,8 @@ public class InteractionService {
         } catch (DuplicateKeyException e) {
             throw new ServiceException(409, "不能重复关注");
         }
+        eventPublisher.publishEvent(new UserNotificationEvent(followeeId, "INTERACTION", "你有了新的关注者",
+                "有用户关注了你", "USER", String.valueOf(followeeId), "FOLLOW:" + follow.getId()));
     }
 
     @Transactional
@@ -177,6 +184,13 @@ public class InteractionService {
         TargetVO vo = new TargetVO();
         BeanUtils.copyProperties(favorite, vo);
         return vo;
+    }
+
+    private void notifyTarget(String targetType, Long targetId, Long actorId, String action, String eventType) {
+        Long recipientId = targetService.targetAuthorId(targetType, targetId);
+        if (recipientId == null || recipientId.equals(actorId)) return;
+        eventPublisher.publishEvent(new UserNotificationEvent(recipientId, "INTERACTION", "你的内容被" + action,
+                "有用户" + action + "了你的内容", targetType, String.valueOf(targetId), eventType + ":" + targetId + ":" + recipientId));
     }
 
     private PageResult<FollowVO> followResult(Page<Follow> page, Query query) {

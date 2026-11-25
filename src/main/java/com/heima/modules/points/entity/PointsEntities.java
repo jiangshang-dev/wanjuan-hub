@@ -53,8 +53,18 @@ public final class PointsEntities {
     public static class SignIn extends BaseEntity {
         private Long userId;
         private LocalDate signDate;
+        private Integer streakDays;
         private Integer points;
         private String idempotencyKey;
+    }
+
+    @Data @TableName("sign_in_streak_rule") @EqualsAndHashCode(callSuper = true)
+    public static class StreakRule extends BaseEntity {
+        private Integer streakDay;
+        private Integer points;
+        private Integer experience;
+        private Integer status;
+        private String remark;
     }
 
     @Data @TableName("user_level") @EqualsAndHashCode(callSuper = true)

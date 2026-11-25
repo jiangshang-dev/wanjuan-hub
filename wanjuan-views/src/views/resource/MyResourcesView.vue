@@ -11,7 +11,7 @@ const router = useRouter()
 const loading = ref(false)
 const records = ref([])
 const categories = ref([])
-const filters = reactive({ keyword: '', status: undefined })
+const filters = reactive({ status: undefined })
 const pagination = reactive({ current: 1, pageSize: 10, total: 0, showSizeChanger: true, showTotal: (total) => `共 ${total} 个资源` })
 const submittingId = ref('')
 const columns = [
@@ -30,7 +30,7 @@ function categoryName(id) { return categories.value.find((item) => String(item.i
 async function load(page = pagination.current) {
   loading.value = true
   try {
-    const data = await userResourceApi.list({ page, size: pagination.pageSize, keyword: filters.keyword.trim() || undefined, status: filters.status })
+    const data = await userResourceApi.list({ page, size: pagination.pageSize, status: filters.status })
     records.value = Array.isArray(data?.records) ? data.records : []
     pagination.current = page
     pagination.total = Number(data?.total || 0)
@@ -87,7 +87,7 @@ onMounted(async () => {
 <template>
   <div class="content-page my-resources-page">
     <div class="page-heading"><div><span class="eyebrow">MY RESOURCES</span><h1>我的发布</h1><p>管理资源草稿、审核进度、公开版本与历史记录。</p></div><a-space wrap><a-button @click="router.push('/my/resources/entitlements')">我的授权</a-button><a-button type="primary" @click="router.push('/my/resources/new')">发布资源</a-button></a-space></div>
-    <div class="my-blog-toolbar"><a-input-search v-model:value="filters.keyword" allow-clear placeholder="搜索我的资源" @search="search" /><a-select v-model:value="filters.status" allow-clear placeholder="全部状态" :options="statusOptions" /><a-button type="primary" @click="search">查询</a-button></div>
+    <div class="my-blog-toolbar"><a-select v-model:value="filters.status" allow-clear placeholder="全部状态" :options="statusOptions" /><a-button type="primary" @click="search">查询</a-button></div>
     <a-card :bordered="false" class="content-card resource-table-card">
       <a-table row-key="id" :columns="columns" :data-source="records" :loading="loading" :pagination="pagination" :scroll="{ x: 1420 }" @change="changeTable">
         <template #bodyCell="{ column, record }">

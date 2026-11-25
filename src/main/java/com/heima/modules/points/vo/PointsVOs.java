@@ -17,6 +17,14 @@ public final class PointsVOs {
         @Schema(description = "累计积分") private Long totalPoints;
         @Schema(description = "当前经验") private Long experience;
         @Schema(description = "今日是否已签到") private Boolean signedToday;
+        @Schema(description = "当前连续签到天数") private Integer streakDays;
+        @Schema(description = "今日签到奖励积分") private Integer todayPoints;
+        @Schema(description = "下一连续签到天数") private Integer nextStreakDay;
+        @Schema(description = "下一档预计奖励积分") private Integer nextRewardPoints;
+
+        public AccountVO(Long userId, Integer balance, Long totalPoints, Long experience, Boolean signedToday) {
+            this(userId, balance, totalPoints, experience, signedToday, 0, 0, 1, 0);
+        }
     }
 
     @Data @NoArgsConstructor @AllArgsConstructor

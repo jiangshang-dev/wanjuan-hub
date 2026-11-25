@@ -5,8 +5,10 @@ import com.heima.common.R;
 import com.heima.modules.points.dto.PointsDtos.AdjustmentRequest;
 import com.heima.modules.points.dto.PointsDtos.LevelRequest;
 import com.heima.modules.points.dto.PointsDtos.RuleRequest;
+import com.heima.modules.points.dto.PointsDtos.StreakRuleRequest;
 import com.heima.modules.points.entity.PointsEntities.Level;
 import com.heima.modules.points.entity.PointsEntities.Rule;
+import com.heima.modules.points.entity.PointsEntities.StreakRule;
 import com.heima.modules.points.service.PointsService;
 import com.heima.modules.points.vo.PointsVOs.RecordVO;
 import com.heima.utils.UserUtil;
@@ -18,6 +20,7 @@ import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -57,6 +60,36 @@ public class AdminPointsController {
     @PreAuthorize("hasAuthority('points:rule:update')")
     public R<Void> updateRule(@PathVariable Long id, @Valid @RequestBody RuleRequest request) {
         pointsService.updateRule(id, request);
+        return R.ok();
+    }
+
+    @GetMapping("/sign-in-rules")
+    @Operation(summary = "连续签到奖励档位")
+    @PreAuthorize("hasAuthority('points:sign-in-rule:list')")
+    public R<List<StreakRule>> streakRules() {
+        return R.ok(pointsService.streakRules());
+    }
+
+    @PostMapping("/sign-in-rules")
+    @Operation(summary = "新增连续签到奖励档位")
+    @PreAuthorize("hasAuthority('points:sign-in-rule:create')")
+    public R<Long> createStreakRule(@Valid @RequestBody StreakRuleRequest request) {
+        return R.ok(pointsService.createStreakRule(request));
+    }
+
+    @PutMapping("/sign-in-rules/{id}")
+    @Operation(summary = "修改连续签到奖励档位")
+    @PreAuthorize("hasAuthority('points:sign-in-rule:update')")
+    public R<Void> updateStreakRule(@PathVariable Long id, @Valid @RequestBody StreakRuleRequest request) {
+        pointsService.updateStreakRule(id, request);
+        return R.ok();
+    }
+
+    @DeleteMapping("/sign-in-rules/{id}")
+    @Operation(summary = "删除连续签到奖励档位")
+    @PreAuthorize("hasAuthority('points:sign-in-rule:delete')")
+    public R<Void> deleteStreakRule(@PathVariable Long id) {
+        pointsService.deleteStreakRule(id);
         return R.ok();
     }
 

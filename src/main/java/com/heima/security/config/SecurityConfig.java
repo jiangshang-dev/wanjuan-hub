@@ -36,7 +36,7 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
                                 "/api/blogs/**","/api/blog-categories","/api/forum/**","/api/comments/**",
                                 "/api/resources/**","/api/resource-categories","/api/announcements","/api/stats",
-                                "/api/search/**","/api/rankings/**").permitAll()
+                                "/api/operation/**","/api/search/**","/api/rankings/**").permitAll()
                         .requestMatchers("/api/auth/captcha","/api/auth/code","/api/auth/sms-code","/api/auth/register","/api/auth/login","/api/auth/login/email","/api/auth/login/phone","/api/auth/refresh","/api/auth/password/reset","/api/admin/auth/login","/api/admin/auth/refresh").permitAll()
                         .requestMatchers("/api/payments/callback/alipay","/api/payments/callback/wechat").permitAll()
                         .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")

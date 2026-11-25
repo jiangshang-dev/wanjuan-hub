@@ -10,7 +10,10 @@ import com.heima.modules.comment.mapper.CommentMappers.CommentMapper;
 import com.heima.modules.comment.mapper.CommentMappers.VersionMapper;
 import com.heima.modules.comment.service.CommentService;
 import com.heima.modules.comment.service.ContentTargetService;
+import com.heima.modules.message.event.UserNotificationEvent;
+import com.heima.modules.message.service.MentionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +26,8 @@ public class CommentAuditListener {
     private final CommentMapper commentMapper;
     private final VersionMapper versionMapper;
     private final ContentTargetService targetService;
+    private final MentionService mentionService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -52,7 +57,9 @@ public class CommentAuditListener {
                     commentMapper.update(null, new LambdaUpdateWrapper<Comment>().eq(Comment::getId, comment.getParentId())
                             .setSql("reply_count = reply_count + 1"));
                 }
+                notifyTargetAuthor(comment);
             }
+            mentionService.publishApprovedMentions(version.getContent(), comment.getAuthorId(), "COMMENT", comment.getId(), version.getVersionNo());
             return;
         }
         String status = switch (event.status()) {
@@ -67,6 +74,20 @@ public class CommentAuditListener {
         commentMapper.update(null, new LambdaUpdateWrapper<Comment>().eq(Comment::getId, comment.getId())
                 .eq(Comment::getLatestVersionNo, event.versionNo()).ne(Comment::getStatus, "OFFLINE")
                 .set(Comment::getStatus, status).set(Comment::getAuditReason, event.reason()));
+    }
+
+    private void notifyTargetAuthor(Comment comment) {
+        Long recipientId = null;
+        if (comment.getReplyToId() != null) {
+            Comment replyTo = commentMapper.selectById(comment.getReplyToId());
+            if (replyTo != null) recipientId = replyTo.getAuthorId();
+        }
+        if (recipientId == null) recipientId = targetService.targetAuthorId(comment.getTargetType(), comment.getTargetId());
+        if (recipientId == null || recipientId.equals(comment.getAuthorId())) return;
+        boolean reply = comment.getReplyToId() != null;
+        eventPublisher.publishEvent(new UserNotificationEvent(recipientId, "INTERACTION",
+                reply ? "收到新的回复" : "收到新的评论", reply ? "你的评论有了新的回复" : "你的内容有了新的评论",
+                "COMMENT", String.valueOf(comment.getId()), "COMMENT_NOTICE:" + comment.getId() + ":" + recipientId));
     }
 
     private void supersede(Long commentId, Integer versionNo) {

@@ -3,10 +3,13 @@ package com.heima.modules.resource.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.heima.common.PageResult;
+import com.heima.exception.ServiceException;
+import com.heima.modules.resource.dto.ResourceEntitlementQueryDTO;
 import com.heima.modules.resource.dto.ResourceQueryDTO;
 import com.heima.modules.resource.entity.ResourceEntitlement;
 import com.heima.modules.resource.mapper.ResourceEntitlementMapper;
 import com.heima.modules.resource.service.ResourceEntitlementService;
+import com.heima.modules.resource.vo.ResourceEntitlementAdminVO;
 import com.heima.modules.resource.vo.ResourceEntitlementVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -39,5 +42,36 @@ public class ResourceEntitlementServiceImpl implements ResourceEntitlementServic
             BeanUtils.copyProperties(item, vo);
             return vo;
         }).toList(), page.getTotal(), pageNo, pageSize);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResult<ResourceEntitlementAdminVO> adminPage(ResourceEntitlementQueryDTO query) {
+        LambdaQueryWrapper<ResourceEntitlement> wrapper = new LambdaQueryWrapper<ResourceEntitlement>()
+                .eq(query.getUserId() != null, ResourceEntitlement::getUserId, query.getUserId())
+                .eq(query.getResourceId() != null, ResourceEntitlement::getResourceId, query.getResourceId())
+                .eq(query.getSourceOrderNo() != null && !query.getSourceOrderNo().isBlank(),
+                        ResourceEntitlement::getSourceOrderNo, query.getSourceOrderNo())
+                .eq(query.getStatus() != null && !query.getStatus().isBlank(), ResourceEntitlement::getStatus, query.getStatus())
+                .orderByDesc(ResourceEntitlement::getId);
+        Page<ResourceEntitlement> page = entitlementMapper.selectPage(new Page<>(query.getPage(), query.getSize()), wrapper);
+        return PageResult.of(page.getRecords().stream().map(ResourceEntitlementServiceImpl::adminVO).toList(),
+                page.getTotal(), query.getPage(), query.getSize());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResourceEntitlementAdminVO adminDetail(Long id) {
+        ResourceEntitlement entitlement = entitlementMapper.selectById(id);
+        if (entitlement == null) {
+            throw new ServiceException(404, "资源授权记录不存在");
+        }
+        return adminVO(entitlement);
+    }
+
+    private static ResourceEntitlementAdminVO adminVO(ResourceEntitlement entitlement) {
+        ResourceEntitlementAdminVO vo = new ResourceEntitlementAdminVO();
+        BeanUtils.copyProperties(entitlement, vo);
+        return vo;
     }
 }

@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
+import { SearchOutlined } from '@ant-design/icons-vue'
 import { useAuthStore } from '../stores/auth'
 import { displayName } from '../utils/format'
 import { errorText } from '../utils/format'
@@ -10,6 +11,7 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const loggingOut = ref(false)
+const searchKeyword = ref('')
 const selectedKeys = computed(() => {
   if (route.name === 'blog-detail') return ['blogs']
   if (route.name === 'resource-detail') return ['resources']
@@ -24,6 +26,11 @@ const avatarText = computed(() => displayName(auth.user).slice(0, 1).toUpperCase
 
 function navigate({ key }) {
   if (key && key !== route.name) router.push({ name: key })
+}
+
+function submitSearch(value) {
+  const keyword = String(value ?? searchKeyword.value).trim()
+  router.push({ name: 'search', query: keyword ? { keyword } : {} })
 }
 
 async function logout() {
@@ -55,10 +62,11 @@ async function logout() {
           <a-menu-item key="resources">资源中心</a-menu-item>
           <a-menu-item v-if="auth.isLoggedIn" key="my-resources">我的发布</a-menu-item>
           <a-menu-item v-if="auth.isLoggedIn" key="my-blogs">我的博客</a-menu-item>
-          <a-menu-item v-if="auth.isLoggedIn" key="profile">个人中心</a-menu-item>
-          <a-menu-item v-if="auth.isLoggedIn" key="security">账号安全</a-menu-item>
+          <a-menu-item v-if="auth.isLoggedIn" key="user-center">个人中心</a-menu-item>
         </a-menu>
         <div class="header-actions">
+          <a-input-search v-model:value="searchKeyword" class="header-search" allow-clear placeholder="搜索博客、论坛和资源" @search="submitSearch" />
+          <router-link class="header-search-mobile" to="/search" aria-label="全站搜索"><SearchOutlined /></router-link>
           <template v-if="auth.isLoggedIn">
             <a-dropdown placement="bottomRight">
               <button class="user-trigger" type="button">
@@ -67,6 +75,10 @@ async function logout() {
               </button>
               <template #overlay>
                 <a-menu>
+                  <a-menu-item key="user-center" @click="router.push('/my')">个人中心</a-menu-item>
+                  <a-menu-item key="membership" @click="router.push('/my/membership')">会员与积分</a-menu-item>
+                  <a-menu-item key="messages" @click="router.push('/my/messages')">消息中心</a-menu-item>
+                  <a-menu-divider />
                   <a-menu-item key="my-blogs" @click="router.push('/my/blogs')">我的博客</a-menu-item>
                   <a-menu-item key="my-resources" @click="router.push('/my/resources')">我的发布</a-menu-item>
                   <a-menu-item key="orders" @click="router.push('/my/orders')">我的订单</a-menu-item>

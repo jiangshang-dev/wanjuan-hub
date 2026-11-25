@@ -26,5 +26,7 @@ public final class AuthDtos {
             @Schema(description="待审核昵称") String pendingNickname, @Schema(description="待审核头像短时效地址") String pendingAvatar,
             @Schema(description="待审核头像文件ID") Long pendingAvatarFileId, @Schema(description="待审核签名") String pendingSignature,
             @Schema(description="是否待审核移除头像") Boolean pendingRemoveAvatar,
-            @Schema(description="资料审核状态") String profileAuditStatus, @Schema(description="资料审核原因") String profileAuditReason) {}
+            @Schema(description="资料审核状态") String profileAuditStatus, @Schema(description="资料审核原因") String profileAuditReason,
+            @Schema(description="是否允许他人点赞自己的内容") Boolean allowLike,
+            @Schema(description="是否允许他人点踩自己的内容") Boolean allowDislike) {}
 }

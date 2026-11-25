@@ -24,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -45,6 +46,7 @@ class ForumAuthorizationTest {
     @Mock private SysAdminMapper adminMapper;
     @Mock private FileService fileService;
     @Mock private ContentAuditService auditService;
+    @Mock private ApplicationEventPublisher eventPublisher;
     @InjectMocks private ForumService forumService;
 
     @BeforeAll

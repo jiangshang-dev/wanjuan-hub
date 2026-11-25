@@ -36,6 +36,50 @@ public class AdminPaymentController {
     private final RefundProcessingService refundService;
     private final PaymentAdminQueryService paymentQueryService;
 
+    @GetMapping("/payments")
+    @Operation(summary = "分页查询支付流水")
+    @PreAuthorize("hasAuthority('payment:list')")
+    public R<PageResult<PaymentAdminVO.PaymentVO>> payments(@Valid @ModelAttribute PaymentAdminDtos.PaymentQuery query) {
+        return R.ok(paymentQueryService.paymentPage(query));
+    }
+
+    @GetMapping("/payments/{paymentNo}")
+    @Operation(summary = "查看支付流水详情")
+    @PreAuthorize("hasAuthority('payment:list')")
+    public R<PaymentAdminVO.PaymentVO> paymentDetail(@PathVariable String paymentNo) {
+        return R.ok(paymentQueryService.paymentDetail(paymentNo));
+    }
+
+    @GetMapping("/payment-notifications")
+    @Operation(summary = "分页查询支付通知元数据，不返回敏感原始报文")
+    @PreAuthorize("hasAuthority('payment:notification:list')")
+    public R<PageResult<PaymentAdminVO.NotificationVO>> notifications(
+            @Valid @ModelAttribute PaymentAdminDtos.NotificationQuery query) {
+        return R.ok(paymentQueryService.notificationPage(query));
+    }
+
+    @GetMapping("/payment-notifications/{notificationId}")
+    @Operation(summary = "查看支付通知元数据详情，不返回敏感原始报文")
+    @PreAuthorize("hasAuthority('payment:notification:list')")
+    public R<PaymentAdminVO.NotificationVO> notificationDetail(@PathVariable String notificationId) {
+        return R.ok(paymentQueryService.notificationDetail(notificationId));
+    }
+
+    @GetMapping("/reconciliations")
+    @Operation(summary = "分页查询支付对账记录，支持按订单号筛选")
+    @PreAuthorize("hasAuthority('payment:reconciliation:list')")
+    public R<PageResult<PaymentAdminVO.ReconciliationVO>> reconciliations(
+            @Valid @ModelAttribute PaymentAdminDtos.ReconciliationQuery query) {
+        return R.ok(paymentQueryService.reconciliationPage(query));
+    }
+
+    @GetMapping("/reconciliations/{reconciliationNo}")
+    @Operation(summary = "查看支付对账记录详情")
+    @PreAuthorize("hasAuthority('payment:reconciliation:list')")
+    public R<PaymentAdminVO.ReconciliationVO> reconciliationDetail(@PathVariable String reconciliationNo) {
+        return R.ok(paymentQueryService.reconciliationDetail(reconciliationNo));
+    }
+
     @PostMapping("/payments/{orderNo}/reconcile")
     @Operation(summary = "主动查询渠道支付结果并生成对账记录")
     @OperationLog(module = "支付管理", value = "手动对账", targetId = "#orderNo")

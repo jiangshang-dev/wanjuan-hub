@@ -27,6 +27,10 @@ export const blogApi = {
   categories: () => request.get('/api/blog-categories'),
 }
 
+export const operationApi = {
+  announcements: (limit = 5) => request.get('/api/announcements', { params: { limit } }),
+}
+
 export const userBlogApi = {
   list: (params) => request.get('/api/user/blogs', { params }),
   create: (data) => request.post('/api/user/blogs', data),

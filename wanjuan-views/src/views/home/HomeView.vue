@@ -16,7 +16,7 @@ const auth = useAuthStore()
         <p>万卷技术社区为学习者提供清晰、安全的账号与个人空间。从这里开始，管理你的社区身份。</p>
         <div class="hero-actions">
           <template v-if="auth.isLoggedIn">
-            <a-button type="primary" size="large" @click="router.push('/profile')">进入个人中心</a-button>
+            <a-button type="primary" size="large" @click="router.push('/my')">进入个人中心</a-button>
             <a-button size="large" @click="router.push('/security')">账号安全</a-button>
           </template>
           <template v-else>

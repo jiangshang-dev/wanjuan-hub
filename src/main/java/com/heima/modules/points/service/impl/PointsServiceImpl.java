@@ -7,17 +7,20 @@ import com.heima.exception.ServiceException;
 import com.heima.modules.points.dto.PointsDtos.AdjustmentRequest;
 import com.heima.modules.points.dto.PointsDtos.LevelRequest;
 import com.heima.modules.points.dto.PointsDtos.RuleRequest;
+import com.heima.modules.points.dto.PointsDtos.StreakRuleRequest;
 import com.heima.modules.points.entity.PointsEntities.Account;
 import com.heima.modules.points.entity.PointsEntities.Level;
 import com.heima.modules.points.entity.PointsEntities.Record;
 import com.heima.modules.points.entity.PointsEntities.Rule;
 import com.heima.modules.points.entity.PointsEntities.SignIn;
+import com.heima.modules.points.entity.PointsEntities.StreakRule;
 import com.heima.modules.points.event.PointsRewardedEvent;
 import com.heima.modules.points.mapper.PointsMappers.AccountMapper;
 import com.heima.modules.points.mapper.PointsMappers.LevelMapper;
 import com.heima.modules.points.mapper.PointsMappers.RecordMapper;
 import com.heima.modules.points.mapper.PointsMappers.RuleMapper;
 import com.heima.modules.points.mapper.PointsMappers.SignInMapper;
+import com.heima.modules.points.mapper.PointsMappers.StreakRuleMapper;
 import com.heima.modules.points.service.PointsService;
 import com.heima.modules.points.vo.PointsVOs.AccountVO;
 import com.heima.modules.points.vo.PointsVOs.LevelVO;
@@ -42,6 +45,7 @@ public class PointsServiceImpl implements PointsService {
     private final RecordMapper recordMapper;
     private final RuleMapper ruleMapper;
     private final SignInMapper signInMapper;
+    private final StreakRuleMapper streakRuleMapper;
     private final LevelMapper levelMapper;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -54,15 +58,22 @@ public class PointsServiceImpl implements PointsService {
         SignIn existing = signInMapper.selectOne(new LambdaQueryWrapper<SignIn>()
                 .eq(SignIn::getUserId, userId).eq(SignIn::getSignDate, today));
         if (existing == null) {
-            Rule rule = enabledRule("SIGN_IN");
-            int awarded = applyChange(locked, rule.getCode(), null, key, rule.getPoints(),
-                    rule.getExperience(), rule.getName(), rule.getDailyLimit(), false);
+            SignIn yesterday = signInOnDate(userId, today.minusDays(1));
+            int streakDays = yesterday == null ? 1 : defaultStreak(yesterday) + 1;
+            StreakRule rule = streakReward(streakDays);
+            int awarded = applyChange(locked, "SIGN_IN", null, key, rule.getPoints(),
+                    rule.getExperience(), "连续签到第" + streakDays + "天", 0, false);
             SignIn signIn = new SignIn();
             signIn.setUserId(userId);
             signIn.setSignDate(today);
+            signIn.setStreakDays(streakDays);
             signIn.setPoints(Math.max(awarded, 0));
             signIn.setIdempotencyKey(key);
-            signInMapper.insert(signIn);
+            try {
+                signInMapper.insert(signIn);
+            } catch (DuplicateKeyException ignored) {
+                // 用户与日期唯一键兜底，账户行锁下正常不会进入该分支。
+            }
         }
         return account(userId);
     }
@@ -75,9 +86,15 @@ public class PointsServiceImpl implements PointsService {
             accountMapper.insertIgnore(userId);
             account = accountMapper.selectById(userId);
         }
-        boolean signed = signInMapper.selectCount(new LambdaQueryWrapper<SignIn>()
-                .eq(SignIn::getUserId, userId).eq(SignIn::getSignDate, LocalDate.now())) > 0;
-        return new AccountVO(userId, account.getBalance(), account.getTotalPoints(), account.getExperience(), signed);
+        LocalDate today = LocalDate.now();
+        SignIn signedToday = signInOnDate(userId, today);
+        SignIn yesterday = signedToday == null ? signInOnDate(userId, today.minusDays(1)) : null;
+        int streakDays = signedToday != null ? defaultStreak(signedToday)
+                : yesterday != null ? defaultStreak(yesterday) : 0;
+        StreakRule next = streakReward(streakDays + 1);
+        return new AccountVO(userId, account.getBalance(), account.getTotalPoints(), account.getExperience(),
+                signedToday != null, streakDays, signedToday == null ? 0 : signedToday.getPoints(),
+                streakDays + 1, next.getPoints());
     }
 
     @Override
@@ -139,6 +156,44 @@ public class PointsServiceImpl implements PointsService {
         Rule rule = requireRule(id);
         BeanUtils.copyProperties(request, rule);
         ruleMapper.updateById(rule);
+    }
+
+    @Override
+    public List<StreakRule> streakRules() {
+        return streakRuleMapper.selectList(new LambdaQueryWrapper<StreakRule>()
+                .orderByAsc(StreakRule::getStreakDay));
+    }
+
+    @Override
+    @Transactional
+    public Long createStreakRule(StreakRuleRequest request) {
+        StreakRule rule = new StreakRule();
+        BeanUtils.copyProperties(request, rule);
+        try {
+            streakRuleMapper.insert(rule);
+        } catch (DuplicateKeyException e) {
+            throw new ServiceException(409, "该连续签到天数已配置");
+        }
+        return rule.getId();
+    }
+
+    @Override
+    @Transactional
+    public void updateStreakRule(Long id, StreakRuleRequest request) {
+        StreakRule rule = streakRuleMapper.selectById(id);
+        if (rule == null) throw new ServiceException(404, "连续签到档位不存在");
+        BeanUtils.copyProperties(request, rule);
+        try {
+            streakRuleMapper.updateById(rule);
+        } catch (DuplicateKeyException e) {
+            throw new ServiceException(409, "该连续签到天数已配置");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteStreakRule(Long id) {
+        if (streakRuleMapper.deleteById(id) == 0) throw new ServiceException(404, "连续签到档位不存在");
     }
 
     @Override
@@ -281,6 +336,28 @@ public class PointsServiceImpl implements PointsService {
         Account account = accountMapper.selectForUpdate(userId);
         if (account == null) throw new ServiceException(404, "用户积分账户不存在");
         return account;
+    }
+
+    private SignIn signInOnDate(Long userId, LocalDate date) {
+        return signInMapper.selectOne(new LambdaQueryWrapper<SignIn>()
+                .eq(SignIn::getUserId, userId).eq(SignIn::getSignDate, date).last("LIMIT 1"));
+    }
+
+    private int defaultStreak(SignIn signIn) {
+        return signIn.getStreakDays() == null ? 1 : signIn.getStreakDays();
+    }
+
+    private StreakRule streakReward(int streakDays) {
+        StreakRule configured = streakRuleMapper.selectOne(new LambdaQueryWrapper<StreakRule>()
+                .eq(StreakRule::getStatus, 1).le(StreakRule::getStreakDay, streakDays)
+                .orderByDesc(StreakRule::getStreakDay).last("LIMIT 1"));
+        if (configured != null) return configured;
+        Rule base = enabledRule("SIGN_IN");
+        StreakRule fallback = new StreakRule();
+        fallback.setStreakDay(1);
+        fallback.setPoints(base.getPoints());
+        fallback.setExperience(base.getExperience());
+        return fallback;
     }
 
     private Rule enabledRule(String code) {

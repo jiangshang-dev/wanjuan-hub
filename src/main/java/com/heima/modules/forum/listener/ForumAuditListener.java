@@ -15,7 +15,10 @@ import com.heima.modules.forum.mapper.ForumMappers.PostVersionMapper;
 import com.heima.modules.forum.mapper.ForumMappers.TopicMapper;
 import com.heima.modules.forum.mapper.ForumMappers.TopicVersionMapper;
 import com.heima.modules.forum.service.ForumService;
+import com.heima.modules.message.event.UserNotificationEvent;
+import com.heima.modules.message.service.MentionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +36,8 @@ public class ForumAuditListener {
     private final PostMapper postMapper;
     private final PostVersionMapper postVersionMapper;
     private final BoardMapper boardMapper;
+    private final MentionService mentionService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -68,6 +73,7 @@ public class ForumAuditListener {
                 boardMapper.update(null, new LambdaUpdateWrapper<Board>().eq(Board::getId, topic.getBoardId())
                         .setSql("topic_count = GREATEST(0, topic_count + 1)"));
             }
+            mentionService.publishApprovedMentions(version.getContent(), topic.getAuthorId(), "FORUM_TOPIC", topic.getId(), version.getVersionNo());
             return;
         }
         String status = workflowStatus(event.status());
@@ -106,7 +112,9 @@ public class ForumAuditListener {
             if (firstPublic) {
                 topicMapper.update(null, new LambdaUpdateWrapper<Topic>().eq(Topic::getId, post.getTopicId())
                         .setSql("post_count = GREATEST(0, post_count + 1)"));
+                notifyReplyAuthor(post);
             }
+            mentionService.publishApprovedMentions(version.getContent(), post.getAuthorId(), "FORUM_POST", post.getId(), version.getVersionNo());
             return;
         }
         String status = workflowStatus(event.status());
@@ -117,6 +125,22 @@ public class ForumAuditListener {
         postMapper.update(null, new LambdaUpdateWrapper<Post>().eq(Post::getId, post.getId())
                 .eq(Post::getLatestVersionNo, event.versionNo()).ne(Post::getStatus, "OFFLINE")
                 .set(Post::getStatus, status).set(Post::getAuditReason, event.reason()));
+    }
+
+    private void notifyReplyAuthor(Post post) {
+        Long recipientId = null;
+        if (post.getReplyToId() != null) {
+            Post replyTo = postMapper.selectById(post.getReplyToId());
+            if (replyTo != null) recipientId = replyTo.getAuthorId();
+        }
+        if (recipientId == null) {
+            Topic topic = topicMapper.selectById(post.getTopicId());
+            if (topic != null) recipientId = topic.getAuthorId();
+        }
+        if (recipientId == null || recipientId.equals(post.getAuthorId())) return;
+        eventPublisher.publishEvent(new UserNotificationEvent(recipientId, "INTERACTION", "收到新的回复",
+                "你的" + (post.getReplyToId() == null ? "主题" : "跟帖") + "有了新的回复",
+                "FORUM_POST", String.valueOf(post.getId()), "FORUM_REPLY:" + post.getId() + ":" + recipientId));
     }
 
     private String workflowStatus(AuditStatus status) {

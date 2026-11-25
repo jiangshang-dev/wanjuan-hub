@@ -100,6 +100,18 @@ public class UserService {
     }
 
     @Transactional
+    public MeResponse updateInteractionSettings(InteractionSettingsRequest request) {
+        Long id = UserUtil.requireFrontUser().getId();
+        int updated = profileMapper.update(null, new LambdaUpdateWrapper<UserProfile>()
+                .eq(UserProfile::getUserId, id)
+                .set(UserProfile::getAllowLike, request.allowLike())
+                .set(UserProfile::getAllowDislike, request.allowDislike())
+                .set(UserProfile::getUpdateTime, LocalDateTime.now()));
+        if (updated != 1) throw new ServiceException(404, "用户资料不存在");
+        return authService.me();
+    }
+
+    @Transactional
     public void changePassword(PasswordRequest request) {
         Long id=UserUtil.requireFrontUser().getId(); UserAccount user=userMapper.selectById(id);
         if (!passwordEncoder.matches(request.oldPassword(),user.getPassword())) throw new ServiceException(400,"旧密码错误");

@@ -43,6 +43,32 @@ public class ContentTargetService {
         if (!visible) throw new ServiceException(404, "目标不存在或未公开");
     }
 
+    public Long targetAuthorId(String targetType, Long targetId) {
+        return switch (targetType) {
+            case "BLOG" -> {
+                BlogArticle target = blogMapper.selectById(targetId);
+                yield target == null ? null : target.getAuthorId();
+            }
+            case "FORUM" -> {
+                Topic target = topicMapper.selectById(targetId);
+                yield target == null ? null : target.getAuthorId();
+            }
+            case "FORUM_POST" -> {
+                Post target = postMapper.selectById(targetId);
+                yield target == null ? null : target.getAuthorId();
+            }
+            case "COMMENT" -> {
+                Comment target = commentMapper.selectById(targetId);
+                yield target == null ? null : target.getAuthorId();
+            }
+            case "RESOURCE" -> {
+                ResourceInfo target = resourceMapper.selectById(targetId);
+                yield target == null ? null : target.getAuthorId();
+            }
+            default -> throw new ServiceException(400, "不支持的目标类型");
+        };
+    }
+
     public void changeCommentCount(String targetType, Long targetId, int delta) {
         String expression = "GREATEST(0, comment_count + " + delta + ")";
         if ("BLOG".equals(targetType)) {

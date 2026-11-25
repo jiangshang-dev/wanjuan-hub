@@ -25,6 +25,8 @@ public class UserProfile {
     private Integer profileVersion;
     private LocalDate birthday;
     private Integer gender;
+    private Boolean allowLike;
+    private Boolean allowDislike;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

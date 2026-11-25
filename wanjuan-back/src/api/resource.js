@@ -11,6 +11,7 @@ export const adminResourceReportApi = {
 }
 
 export const adminResourceCategoryApi = {
+  publicList: () => request.get('/api/resource-categories'),
   list: (params) => request.get('/api/admin/resource-categories', { params }),
   create: (data) => request.post('/api/admin/resource-categories', data),
   update: (id, data) => request.put(`/api/admin/resource-categories/${id}`, data),

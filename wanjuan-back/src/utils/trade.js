@@ -15,6 +15,37 @@ export const refundStatusOptions = [
   { value: 'ABNORMAL', label: '退款异常' },
 ]
 
+export const paymentChannelOptions = [
+  { value: 'ALIPAY', label: '支付宝' },
+  { value: 'WECHAT', label: '微信支付' },
+]
+
+export const paymentStatusOptions = [
+  { value: 'CREATED', label: '待发起' },
+  { value: 'PAYING', label: '支付中' },
+  { value: 'SUCCEEDED', label: '支付成功' },
+  { value: 'CLOSED', label: '已关闭' },
+  { value: 'REFUNDED', label: '已退款' },
+]
+
+export const notificationStatusOptions = [
+  { value: 'RECEIVED', label: '已接收' },
+  { value: 'PROCESSED', label: '已处理' },
+  { value: 'IGNORED', label: '已忽略' },
+]
+
+export const reconciliationResultOptions = [
+  { value: 'MATCHED', label: '一致' },
+  { value: 'REPAIRED', label: '已修复' },
+  { value: 'MISMATCH', label: '不一致' },
+  { value: 'CHANNEL_PENDING', label: '渠道待支付' },
+]
+
+export const entitlementStatusOptions = [
+  { value: 'ACTIVE', label: '生效中' },
+  { value: 'REVOKED', label: '已撤销' },
+]
+
 export function orderStatus(value) {
   return {
     PENDING_PAYMENT: { text: '待支付', color: 'processing' },
@@ -77,4 +108,23 @@ export function reconciliationResult(value) {
     CHANNEL_PENDING: { text: '渠道待支付', color: 'processing' },
     MISMATCH: { text: '不一致', color: 'error' },
   }[value] || { text: value || '未知', color: 'default' }
+}
+
+export function notificationStatus(value) {
+  return {
+    RECEIVED: { text: '已接收', color: 'processing' },
+    PROCESSED: { text: '已处理', color: 'success' },
+    IGNORED: { text: '已忽略', color: 'default' },
+  }[value] || { text: value || '未知', color: 'default' }
+}
+
+export function entitlementStatus(value) {
+  return {
+    ACTIVE: { text: '生效中', color: 'success' },
+    REVOKED: { text: '已撤销', color: 'default' },
+  }[value] || { text: value || '未知', color: 'default' }
+}
+
+export function entitlementSource(value) {
+  return { PAID: '付费订单', POINTS: '积分兑换' }[value] || value || '-'
 }

@@ -49,6 +49,7 @@ public final class ForumEntities {
         private Long postCount;
         private Long commentCount;
         private Long likeCount;
+        private Long dislikeCount;
         private Long favoriteCount;
         private Long viewCount;
         private Integer deleted;
@@ -79,6 +80,7 @@ public final class ForumEntities {
         private Integer publishedVersionNo;
         private String auditReason;
         private Long likeCount;
+        private Long dislikeCount;
         private Integer deleted;
     }
 

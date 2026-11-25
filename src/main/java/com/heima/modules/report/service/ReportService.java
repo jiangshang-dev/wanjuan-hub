@@ -26,7 +26,10 @@ import com.heima.modules.report.entity.ReportEntities.Report;
 import com.heima.modules.report.mapper.ReportMappers.HandleMapper;
 import com.heima.modules.report.mapper.ReportMappers.ReportMapper;
 import com.heima.modules.report.vo.ReportVO;
+import com.heima.modules.message.event.UserNotificationEvent;
+import com.heima.modules.search.event.SearchIndexRefreshEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.beans.BeanUtils;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -49,6 +52,7 @@ public class ReportService {
     private final CommentMapper commentMapper;
     private final BoardMapper boardMapper;
     private final ResourceService resourceService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public Long create(CreateRequest request, Long reporterId) {
@@ -99,6 +103,9 @@ public class ReportService {
             throw new ServiceException(409, "举报已存在处理记录");
         }
         if ("OFFLINE".equals(request.getAction())) offline(report.getTargetType(), report.getTargetId(), request.getNote());
+        eventPublisher.publishEvent(new UserNotificationEvent(report.getReporterId(), "SYSTEM", "举报处理结果",
+                "REJECTED".equals(status) ? "你提交的举报经核实未成立" : "你提交的举报已处理",
+                "REPORT", String.valueOf(report.getId()), "REPORT_RESULT:" + report.getId()));
     }
 
     private void offline(String targetType, Long targetId, String note) {
@@ -108,6 +115,7 @@ public class ReportService {
                 if (article == null || article.getDeleted() == 1) throw new ServiceException(404, "被举报文章不存在");
                 blogMapper.update(null, new LambdaUpdateWrapper<BlogArticle>().eq(BlogArticle::getId, targetId)
                         .eq(BlogArticle::getDeleted, 0).set(BlogArticle::getStatus, "OFFLINE").set(BlogArticle::getAuditReason, note));
+                eventPublisher.publishEvent(new SearchIndexRefreshEvent("BLOG", targetId));
             }
             case "FORUM" -> {
                 Topic topic = topicMapper.selectById(targetId);
@@ -115,6 +123,7 @@ public class ReportService {
                 boolean wasPublic = isPublic(topic.getDeleted(), topic.getStatus(), topic.getPublishedVersionNo());
                 topicMapper.update(null, new LambdaUpdateWrapper<Topic>().eq(Topic::getId, targetId).eq(Topic::getDeleted, 0)
                         .set(Topic::getStatus, "OFFLINE").set(Topic::getAuditReason, note));
+                eventPublisher.publishEvent(new SearchIndexRefreshEvent("FORUM_TOPIC", targetId));
                 if (wasPublic) boardMapper.update(null, new LambdaUpdateWrapper<Board>().eq(Board::getId, topic.getBoardId())
                         .setSql("topic_count = GREATEST(0, topic_count - 1)"));
             }

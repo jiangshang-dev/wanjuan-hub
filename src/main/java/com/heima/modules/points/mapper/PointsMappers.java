@@ -6,6 +6,7 @@ import com.heima.modules.points.entity.PointsEntities.Level;
 import com.heima.modules.points.entity.PointsEntities.Record;
 import com.heima.modules.points.entity.PointsEntities.Rule;
 import com.heima.modules.points.entity.PointsEntities.SignIn;
+import com.heima.modules.points.entity.PointsEntities.StreakRule;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -38,5 +39,6 @@ public final class PointsMappers {
 
     @Mapper public interface RuleMapper extends BaseMapper<Rule> {}
     @Mapper public interface SignInMapper extends BaseMapper<SignIn> {}
+    @Mapper public interface StreakRuleMapper extends BaseMapper<StreakRule> {}
     @Mapper public interface LevelMapper extends BaseMapper<Level> {}
 }
