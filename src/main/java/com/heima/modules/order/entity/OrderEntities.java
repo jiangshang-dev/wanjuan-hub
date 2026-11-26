@@ -19,7 +19,11 @@ public final class OrderEntities {
         private String orderNo;
         private String idempotencyKey;
         private Long userId;
+        private String orderType;
         private Long resourceId;
+        private Long membershipPlanId;
+        private Integer membershipDurationDays;
+        private Integer membershipDailyLimit;
         private BigDecimal totalAmount;
         private String currency;
         private String clientType;

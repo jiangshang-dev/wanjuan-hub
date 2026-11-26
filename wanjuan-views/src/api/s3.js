@@ -32,6 +32,9 @@ export const userCommentApi = {
 }
 
 export const interactionApi = {
+  reactionStatus: (params) => request.get('/api/reactions/status', { params }),
+  react: (data) => request.post('/api/user/reactions', data),
+  unreact: (data) => request.delete('/api/user/reactions', { data }),
   like: (data) => request.post('/api/user/likes', data),
   unlike: (data) => request.delete('/api/user/likes', { data }),
   likes: (params) => request.get('/api/user/likes', { params }),

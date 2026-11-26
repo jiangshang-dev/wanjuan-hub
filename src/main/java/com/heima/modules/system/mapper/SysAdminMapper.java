@@ -15,4 +15,16 @@ public interface SysAdminMapper extends BaseMapper<SysAdmin> {
     List<SysPermission> selectPermissions(Long adminId);
     @Update("UPDATE sys_admin SET status=#{status},token_version=token_version+1 WHERE id=#{id}") int updateStatusAndVersion(@Param("id") Long id,@Param("status") int status);
     @Update("UPDATE sys_admin SET token_version=token_version+1 WHERE id=#{id}") int incrementTokenVersion(Long id);
+
+    @Select("""
+            SELECT EXISTS(SELECT 1 FROM forum_moderator WHERE admin_id=#{id})
+                OR EXISTS(SELECT 1 FROM content_report_handle WHERE handler_id=#{id})
+                OR EXISTS(SELECT 1 FROM audit_manual_record WHERE reviewer_id=#{id})
+                OR EXISTS(SELECT 1 FROM resource_invalid_report WHERE handler_id=#{id})
+                OR EXISTS(SELECT 1 FROM trade_refund WHERE reviewer_id=#{id})
+                OR EXISTS(SELECT 1 FROM trade_reconciliation WHERE operator_id=#{id})
+                OR EXISTS(SELECT 1 FROM wallet_withdrawal WHERE handled_by=#{id})
+                OR EXISTS(SELECT 1 FROM operation_feedback WHERE reply_admin_id=#{id})
+            """)
+    boolean hasBusinessReferences(@Param("id") Long id);
 }

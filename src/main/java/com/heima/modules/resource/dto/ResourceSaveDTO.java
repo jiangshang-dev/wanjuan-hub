@@ -23,9 +23,9 @@ public class ResourceSaveDTO {
     @Size(max = 20) @Schema(description = "附件图片文件ID，最多20个") private List<@NotNull Long> attachmentFileIds;
     @NotNull @Schema(description = "分类ID") private Long categoryId;
     @Size(max = 10) @Schema(description = "标签ID，最多10个") private List<@NotNull Long> tagIds;
-    @NotBlank @Pattern(regexp = "GUEST_FREE|LOGIN_FREE|REPLY_REQUIRED|POINTS|PAID") @Schema(description = "访问类型", allowableValues = {"GUEST_FREE", "LOGIN_FREE", "REPLY_REQUIRED", "POINTS", "PAID"}) private String accessType;
+    @NotBlank @Pattern(regexp = "FREE|POINTS|MEMBER|GUEST_FREE|LOGIN_FREE|REPLY_REQUIRED|PAID") @Schema(description = "访问类型，统一为免费/积分/会员；旧枚举仅兼容旧客户端", allowableValues = {"FREE", "POINTS", "MEMBER", "GUEST_FREE", "LOGIN_FREE", "REPLY_REQUIRED", "PAID"}) private String accessType;
     @Min(1) @Schema(description = "积分价格，POINTS类型必填") private Integer pointsPrice;
-    @DecimalMin(value = "0.01") @Schema(description = "现金价格，PAID类型必填") private BigDecimal price;
+    @DecimalMin(value = "0.01") @Schema(description = "历史现金价格字段；新资源不再单独现金售卖") private BigDecimal price;
     @NotBlank @Size(max = 1000) @Schema(description = "版权声明") private String copyrightNotice;
     @Size(max = 20) @Schema(description = "多网盘链接，最多20个") private List<@Valid ResourceLinkDTO> links;
 }

@@ -43,18 +43,18 @@ CREATE TABLE operation_feedback
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO sys_permission(id, parent_id, name, code, type, path, sort_order)
-VALUES (393, 300, '灰色日管理', 'operation:gray-day', 'MENU', '/operation/gray-days', 7),
-       (394, 393, '灰色日查询', 'operation:gray-day:list', 'BUTTON', NULL, 1),
-       (395, 393, '灰色日新增', 'operation:gray-day:create', 'BUTTON', NULL, 2),
-       (396, 393, '灰色日修改', 'operation:gray-day:update', 'BUTTON', NULL, 3),
-       (397, 393, '灰色日启停', 'operation:gray-day:status', 'BUTTON', NULL, 4),
-       (398, 300, '背景音乐', 'operation:music', 'MENU', '/operation/background-music', 8),
-       (399, 398, '音乐配置查询', 'operation:music:list', 'BUTTON', NULL, 1),
-       (400, 398, '音乐配置修改', 'operation:music:update', 'BUTTON', NULL, 2),
-       (401, 300, '意见反馈', 'operation:feedback', 'MENU', '/operation/feedbacks', 9),
-       (402, 401, '反馈查询', 'operation:feedback:list', 'BUTTON', NULL, 1),
-       (403, 401, '反馈回复', 'operation:feedback:reply', 'BUTTON', NULL, 2),
-       (404, 401, '反馈关闭', 'operation:feedback:close', 'BUTTON', NULL, 3);
+VALUES (500, 300, '灰色日管理', 'operation:gray-day', 'MENU', '/operation/gray-days', 7),
+       (501, 500, '灰色日查询', 'operation:gray-day:list', 'BUTTON', NULL, 1),
+       (502, 500, '灰色日新增', 'operation:gray-day:create', 'BUTTON', NULL, 2),
+       (503, 500, '灰色日修改', 'operation:gray-day:update', 'BUTTON', NULL, 3),
+       (504, 500, '灰色日启停', 'operation:gray-day:status', 'BUTTON', NULL, 4),
+       (505, 300, '背景音乐', 'operation:music', 'MENU', '/operation/background-music', 8),
+       (506, 505, '音乐配置查询', 'operation:music:list', 'BUTTON', NULL, 1),
+       (507, 505, '音乐配置修改', 'operation:music:update', 'BUTTON', NULL, 2),
+       (508, 300, '意见反馈', 'operation:feedback', 'MENU', '/operation/feedbacks', 9),
+       (509, 508, '反馈查询', 'operation:feedback:list', 'BUTTON', NULL, 1),
+       (510, 508, '反馈回复', 'operation:feedback:reply', 'BUTTON', NULL, 2),
+       (511, 508, '反馈关闭', 'operation:feedback:close', 'BUTTON', NULL, 3);
 
 INSERT INTO sys_role_permission(role_id, permission_id)
-SELECT 1, id FROM sys_permission WHERE id BETWEEN 393 AND 404;
+SELECT 1, id FROM sys_permission WHERE id BETWEEN 500 AND 511;

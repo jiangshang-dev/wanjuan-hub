@@ -71,8 +71,8 @@ public class PointsServiceImpl implements PointsService {
             signIn.setIdempotencyKey(key);
             try {
                 signInMapper.insert(signIn);
-            } catch (DuplicateKeyException ignored) {
-                // 用户与日期唯一键兜底，账户行锁下正常不会进入该分支。
+            } catch (DuplicateKeyException e) {
+                throw new ServiceException(409, "签到状态冲突，请刷新后重试");
             }
         }
         return account(userId);

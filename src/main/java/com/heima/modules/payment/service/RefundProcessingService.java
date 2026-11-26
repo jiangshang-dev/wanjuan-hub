@@ -51,6 +51,9 @@ public class RefundProcessingService {
         if (existing != null) {
             return OrderServiceImpl.toRefundVO(existing, orderNo);
         }
+        if ("MEMBERSHIP".equals(order.getOrderType())) {
+            throw new ServiceException(409, "会员订单暂不支持自助退款，请联系管理员处理");
+        }
         if (!"PAID".equals(order.getStatus())) {
             throw new ServiceException(409, "仅已支付订单可以申请退款");
         }

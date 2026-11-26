@@ -1,6 +1,8 @@
 package com.heima.modules.resource;
 
 import com.heima.exception.ServiceException;
+import com.heima.modules.membership.entity.MembershipEntities.CommissionConfig;
+import com.heima.modules.membership.service.MembershipService;
 import com.heima.modules.resource.entity.ResourceEntitlement;
 import com.heima.modules.resource.entity.ResourceInfo;
 import com.heima.modules.resource.entity.ResourceVersion;
@@ -10,6 +12,7 @@ import com.heima.modules.resource.mapper.ResourceInfoMapper;
 import com.heima.modules.resource.mapper.ResourceVersionMapper;
 import com.heima.modules.resource.service.impl.ResourceTradeServiceImpl;
 import com.heima.modules.points.service.PointsService;
+import com.heima.modules.wallet.service.WalletService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,6 +28,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,6 +37,8 @@ class ResourceTradeServiceTest {
     @Mock private ResourceVersionMapper versionMapper;
     @Mock private ResourceEntitlementMapper entitlementMapper;
     @Mock private PointsService pointsService;
+    @Mock private MembershipService membershipService;
+    @Mock private WalletService walletService;
     @InjectMocks private ResourceTradeServiceImpl tradeService;
 
     @Test
@@ -80,11 +86,33 @@ class ResourceTradeServiceTest {
         when(versionMapper.selectOne(any())).thenReturn(pointsVersion);
         when(entitlementMapper.selectCount(any())).thenReturn(0L);
         when(entitlementMapper.selectOne(any())).thenReturn(granted);
+        CommissionConfig config = new CommissionConfig();
+        config.setPointsUnitPrice(new BigDecimal("0.10"));
+        when(membershipService.commissionConfig()).thenReturn(config);
 
         tradeService.redeemPoints(8L, 1L);
 
         verify(pointsService).redeem(8L, 1L, 30);
         verify(entitlementMapper).grantIgnore(8L, 1L, "POINTS", null, null, 30);
+        verify(walletService).credit(7L, "POINTS_RESOURCE_COMMISSION", "8:1", new BigDecimal("3.00"),
+                "积分资源兑换返佣，扣除积分：30，资源ID：1");
+    }
+
+    @Test
+    void authorRedeemingOwnResourceIsRejectedWithoutCommission() {
+        ResourceInfo own = resource();
+        own.setAuthorId(8L);
+        ResourceVersion pointsVersion = version();
+        pointsVersion.setAccessType(AccessType.POINTS.name());
+        pointsVersion.setPrice(null);
+        pointsVersion.setPointsPrice(30);
+        when(resourceMapper.selectOne(any())).thenReturn(own);
+        when(versionMapper.selectOne(any())).thenReturn(pointsVersion);
+
+        ServiceException error = assertThrows(ServiceException.class, () -> tradeService.redeemPoints(8L, 1L));
+
+        assertEquals(409, error.getCode());
+        verifyNoInteractions(membershipService, walletService);
     }
 
     private ResourceInfo resource() {

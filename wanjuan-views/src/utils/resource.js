@@ -16,8 +16,10 @@ const accessTypes = {
   GUEST_FREE: '游客免费',
   LOGIN_FREE: '登录免费',
   REPLY_REQUIRED: '回复可见',
+  FREE: '免费',
   POINTS: '积分兑换',
-  PAID: '付费购买',
+  MEMBER: '会员领取',
+  PAID: '会员领取',
 }
 
 export const resourceStatus = (value) => statuses[value] || { text: value || '-', color: 'default' }

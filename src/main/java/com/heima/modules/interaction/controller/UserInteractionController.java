@@ -6,6 +6,7 @@ import com.heima.modules.interaction.dto.InteractionDtos.Query;
 import com.heima.modules.interaction.dto.InteractionDtos.TargetRequest;
 import com.heima.modules.interaction.service.InteractionService;
 import com.heima.modules.interaction.vo.InteractionVos.FollowVO;
+import com.heima.modules.interaction.vo.InteractionVos.ReactionVO;
 import com.heima.modules.interaction.vo.InteractionVos.TargetVO;
 import com.heima.utils.UserUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,6 +49,18 @@ public class UserInteractionController {
     @Operation(summary = "分页查询自己的点赞记录")
     public R<PageResult<TargetVO>> likes(@Valid @ModelAttribute Query query) {
         return R.ok(interactionService.likes(query, UserUtil.requireFrontUser().getId()));
+    }
+
+    @PostMapping("/reactions")
+    @Operation(summary = "点赞或点踩，重复提交幂等，切换到另一种反应时原子更新计数")
+    public R<ReactionVO> react(@Valid @RequestBody TargetRequest request) {
+        return R.ok(interactionService.react(request, UserUtil.requireFrontUser().getId()));
+    }
+
+    @DeleteMapping("/reactions")
+    @Operation(summary = "取消自己的点赞或点踩，灰色日同样禁止取消")
+    public R<ReactionVO> unreact(@Valid @RequestBody TargetRequest request) {
+        return R.ok(interactionService.unreact(request, UserUtil.requireFrontUser().getId()));
     }
 
     @PostMapping("/favorites")

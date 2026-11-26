@@ -7,6 +7,8 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.List;
+
 @Mapper
 public interface BlogArticleMapper extends BaseMapper<BlogArticle> {
     @Select({"<script>", "SELECT a.* FROM blog_article a JOIN blog_article_version v ON v.article_id=a.id AND v.version_no=a.published_version_no",
@@ -21,4 +23,7 @@ public interface BlogArticleMapper extends BaseMapper<BlogArticle> {
             "<if test='keyword != null and keyword != \"\"'> AND v.title LIKE CONCAT('%',#{keyword},'%')</if>",
             "ORDER BY a.id DESC</script>"})
     Page<BlogArticle> selectAdminPage(Page<BlogArticle> page, @Param("status") String status, @Param("keyword") String keyword);
+
+    @Select("SELECT id FROM blog_article ORDER BY id")
+    List<Long> selectAllIdsIncludingDeleted();
 }

@@ -15,6 +15,6 @@ public class ResourceQueryDTO {
     @Size(max = 120) @Schema(description = "标题、摘要或描述关键词") private String keyword;
     @Schema(description = "分类ID") private Long categoryId;
     @Schema(description = "标签ID，公开列表可用") private Long tagId;
-    @Pattern(regexp = "GUEST_FREE|LOGIN_FREE|REPLY_REQUIRED|POINTS|PAID") @Schema(description = "访问类型，公开列表可用") private String accessType;
+    @Pattern(regexp = "FREE|POINTS|MEMBER|GUEST_FREE|LOGIN_FREE|REPLY_REQUIRED|PAID") @Schema(description = "访问类型，公开列表可用；新数据统一为FREE/POINTS/MEMBER") private String accessType;
     @Pattern(regexp = "DRAFT|PENDING|PUBLISHED|OFFLINE|REJECTED|MANUAL_REVIEW|INVALID") @Schema(description = "状态，用户和后台列表可用") private String status;
 }

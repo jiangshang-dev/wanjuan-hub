@@ -233,8 +233,9 @@ public class ForumService {
         requireGlobalAdmin(adminId);
         requiredBoard(id);
         if (boardMapper.selectCount(new LambdaQueryWrapper<Board>().eq(Board::getParentId, id)) > 0
-                || topicMapper.selectCount(new LambdaQueryWrapper<Topic>().eq(Topic::getBoardId, id).eq(Topic::getDeleted, 0)) > 0) {
-            throw new ServiceException(409, "板块下仍有子板块或主题，不能删除");
+                || topicMapper.selectCount(new LambdaQueryWrapper<Topic>().eq(Topic::getBoardId, id)) > 0
+                || postMapper.selectCount(new LambdaQueryWrapper<Post>().eq(Post::getBoardId, id)) > 0) {
+            throw new ServiceException(409, "板块下仍有子板块、主题或跟帖，不能删除");
         }
         moderatorMapper.delete(new LambdaQueryWrapper<Moderator>().eq(Moderator::getBoardId, id));
         boardMapper.deleteById(id);

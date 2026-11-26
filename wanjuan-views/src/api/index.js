@@ -19,6 +19,7 @@ export const userApi = {
   changePassword: (data) => request.post('/api/user/password', data),
   bindEmail: (data) => request.post('/api/user/email/bind', data),
   bindPhone: (data) => request.post('/api/user/phone/bind', data),
+  updateInteractionSettings: (data) => request.put('/api/user/interaction-settings', data),
 }
 
 export const blogApi = {
@@ -29,6 +30,14 @@ export const blogApi = {
 
 export const operationApi = {
   announcements: (limit = 5) => request.get('/api/announcements', { params: { limit } }),
+  grayDay: () => request.get('/api/operation/site-experience/gray-day'),
+  backgroundMusic: () => request.get('/api/operation/site-experience/background-music'),
+}
+
+export const feedbackApi = {
+  list: (params) => request.get('/api/user/feedbacks', { params }),
+  create: (data) => request.post('/api/user/feedbacks', data),
+  detail: (id) => request.get(`/api/user/feedbacks/${encodeURIComponent(String(id))}`),
 }
 
 export const userBlogApi = {

@@ -1,8 +1,9 @@
 package com.heima.modules.search.service;
 
+import com.heima.modules.search.event.SearchIndexMessage;
+
 public interface SearchIndexService {
-    void indexPublic(String contentType, Long contentId, String title, String summary,
-                     String content, String url);
-    void remove(String contentType, Long contentId);
-    void synchronize(String contentType, Long contentId);
+    void consume(SearchIndexMessage message);
+
+    void synchronize(String contentType, Long contentId, long eventVersion);
 }

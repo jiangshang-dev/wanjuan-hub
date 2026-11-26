@@ -1,11 +1,12 @@
 package com.heima.modules.search.service.impl;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.heima.common.PageResult;
 import com.heima.exception.ServiceException;
 import com.heima.modules.search.dto.SearchDtos.SearchResultVO;
-import com.heima.modules.search.entity.SearchDocument;
-import com.heima.modules.search.mapper.SearchDocumentMapper;
+import com.heima.modules.search.dto.SearchIndexDocument;
+import com.heima.modules.search.service.SearchIndexRepository;
+import com.heima.modules.search.service.SearchIndexRepository.SearchHit;
+import com.heima.modules.search.service.SearchIndexRepository.SearchPage;
 import com.heima.modules.search.service.SearchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,19 +17,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
 
 import java.time.Duration;
-import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class SearchServiceImpl implements SearchService {
     private static final String HISTORY_PREFIX = "wanjuan:search:history:";
-    private static final Set<String> PUBLIC_TYPES = Set.of("BLOG", "RESOURCE", "FORUM_TOPIC");
-    private final SearchDocumentMapper documentMapper;
+    private static final Set<String> PUBLIC_TYPES = Set.of("BLOG", "FORUM_TOPIC");
+    private static final int MAX_RESULT_WINDOW = 10_000;
+    private final SearchIndexRepository indexRepository;
     private final StringRedisTemplate redisTemplate;
     private final JdbcTemplate jdbcTemplate;
 
@@ -39,15 +40,14 @@ public class SearchServiceImpl implements SearchService {
         long current = Math.max(1, page);
         long pageSize = Math.min(100, Math.max(1, size));
         if (normalized.isEmpty()) return PageResult.of(List.of(), 0, current, pageSize);
-
-        Page<SearchDocument> result = documentMapper.search(new Page<>(current, pageSize), normalized, normalizedType);
+        long offset = (current - 1) * pageSize;
+        if (offset < 0 || offset + pageSize > MAX_RESULT_WINDOW) {
+            throw new ServiceException(400, "搜索分页不能超过10000条结果");
+        }
+        SearchPage result = indexRepository.search(normalized, normalizedType, (int) offset, (int) pageSize);
         recordKeyword(normalized, userId);
-        List<SearchResultVO> records = result.getRecords().stream()
-                .map(document -> new SearchResultVO(document.getContentType(), document.getContentId(),
-                        HtmlUtils.htmlEscape(document.getTitle()),
-                        safeHighlight(snippet(document), normalized), document.getUrl()))
-                .toList();
-        return PageResult.of(records, result.getTotal(), result.getCurrent(), result.getSize());
+        List<SearchResultVO> records = result.hits().stream().map(this::toResult).toList();
+        return PageResult.of(records, result.total(), current, pageSize);
     }
 
     @Override
@@ -69,9 +69,22 @@ public class SearchServiceImpl implements SearchService {
         }
     }
 
+    private SearchResultVO toResult(SearchHit hit) {
+        SearchIndexDocument document = hit.document();
+        Map<String, List<String>> highlights = hit.highlights();
+        String title = firstHighlight(highlights, "title");
+        String summary = firstHighlight(highlights, "summary");
+        if (summary == null) summary = firstHighlight(highlights, "content");
+        if (summary == null) summary = firstHighlight(highlights, "title");
+        return new SearchResultVO(document.contentType(), document.contentId(),
+                title == null ? HtmlUtils.htmlEscape(document.title()) : safeEsHighlight(title),
+                safeEsHighlight(summary == null ? snippet(document) : summary), document.url());
+    }
+
     private void recordKeyword(String keyword, Long userId) {
         try {
-            documentMapper.incrementHotKeyword(keyword);
+            jdbcTemplate.update("INSERT INTO search_hot_keyword(keyword,heat) VALUES(?,1) " +
+                    "ON DUPLICATE KEY UPDATE heat=heat+1", keyword);
         } catch (DataAccessException ex) {
             log.warn("Failed to record hot search keyword");
         }
@@ -87,24 +100,22 @@ public class SearchServiceImpl implements SearchService {
         }
     }
 
-    public static String safeHighlight(String text, String keyword) {
-        if (text == null) return "";
-        Matcher matcher = Pattern.compile(Pattern.quote(keyword), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE)
-                .matcher(text);
-        StringBuilder result = new StringBuilder();
-        int cursor = 0;
-        while (matcher.find()) {
-            result.append(HtmlUtils.htmlEscape(text.substring(cursor, matcher.start())));
-            result.append("<mark>").append(HtmlUtils.htmlEscape(matcher.group())).append("</mark>");
-            cursor = matcher.end();
-        }
-        result.append(HtmlUtils.htmlEscape(text.substring(cursor)));
-        return result.toString();
+    private static String firstHighlight(Map<String, List<String>> highlights, String field) {
+        if (highlights == null) return null;
+        List<String> values = highlights.get(field);
+        return values == null || values.isEmpty() ? null : values.getFirst();
     }
 
-    private static String snippet(SearchDocument document) {
-        String text = document.getSummary() == null || document.getSummary().isBlank()
-                ? document.getContent() : document.getSummary();
+    static String safeEsHighlight(String text) {
+        if (text == null) return "";
+        return HtmlUtils.htmlEscape(text)
+                .replace("&lt;mark&gt;", "<mark>")
+                .replace("&lt;/mark&gt;", "</mark>");
+    }
+
+    private static String snippet(SearchIndexDocument document) {
+        String text = document.summary() == null || document.summary().isBlank()
+                ? document.content() : document.summary();
         if (text == null) return "";
         return text.length() <= 240 ? text : text.substring(0, 240);
     }
@@ -117,7 +128,7 @@ public class SearchServiceImpl implements SearchService {
 
     private static String normalizeType(String type) {
         if (type == null || type.isBlank()) return null;
-        String value = type.trim().toUpperCase();
+        String value = type.trim().toUpperCase(Locale.ROOT);
         if (!PUBLIC_TYPES.contains(value)) throw new ServiceException("不支持的搜索类型");
         return value;
     }

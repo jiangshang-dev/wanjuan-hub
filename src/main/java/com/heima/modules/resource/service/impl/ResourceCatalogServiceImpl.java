@@ -62,8 +62,9 @@ public class ResourceCatalogServiceImpl implements ResourceCatalogService {
     @Override
     @Transactional(readOnly = true)
     public PageResult<ResourceCategoryVO> categoryPage(ResourceQueryDTO query) {
+        String keyword = query.getKeyword() == null ? "" : query.getKeyword().trim();
         Page<ResourceCategory> page = categoryMapper.selectPage(new Page<>(pageNo(query), pageSize(query)), new LambdaQueryWrapper<ResourceCategory>()
-                .like(query.getKeyword() != null && !query.getKeyword().isBlank(), ResourceCategory::getName, query.getKeyword().trim())
+                .like(!keyword.isEmpty(), ResourceCategory::getName, keyword)
                 .orderByAsc(ResourceCategory::getSortOrder).orderByDesc(ResourceCategory::getId));
         return PageResult.of(page.getRecords().stream().map(this::categoryVO).toList(), page.getTotal(), pageNo(query), pageSize(query));
     }
@@ -90,7 +91,7 @@ public class ResourceCatalogServiceImpl implements ResourceCatalogService {
     @Override
     @Transactional
     public void deleteCategory(Long id) {
-        if (resourceMapper.selectCount(new LambdaQueryWrapper<ResourceInfo>().eq(ResourceInfo::getCategoryId, id).eq(ResourceInfo::getDeleted, 0)) > 0) {
+        if (resourceMapper.selectCount(new LambdaQueryWrapper<ResourceInfo>().eq(ResourceInfo::getCategoryId, id)) > 0) {
             throw new ServiceException(409, "分类下仍有资源，不能删除");
         }
         if (categoryMapper.deleteById(id) == 0) throw new ServiceException(404, "分类不存在");
@@ -99,8 +100,9 @@ public class ResourceCatalogServiceImpl implements ResourceCatalogService {
     @Override
     @Transactional(readOnly = true)
     public PageResult<ResourceTagVO> tagPage(ResourceQueryDTO query) {
+        String keyword = query.getKeyword() == null ? "" : query.getKeyword().trim();
         Page<ResourceTag> page = tagMapper.selectPage(new Page<>(pageNo(query), pageSize(query)), new LambdaQueryWrapper<ResourceTag>()
-                .like(query.getKeyword() != null && !query.getKeyword().isBlank(), ResourceTag::getName, query.getKeyword().trim()).orderByDesc(ResourceTag::getId));
+                .like(!keyword.isEmpty(), ResourceTag::getName, keyword).orderByDesc(ResourceTag::getId));
         return PageResult.of(page.getRecords().stream().map(item -> {
             ResourceTagVO vo = new ResourceTagVO();
             BeanUtils.copyProperties(item, vo);
@@ -138,9 +140,10 @@ public class ResourceCatalogServiceImpl implements ResourceCatalogService {
     @Override
     @Transactional(readOnly = true)
     public PageResult<ResourceDiskTypeVO> diskTypePage(ResourceQueryDTO query) {
+        String keyword = query.getKeyword() == null ? "" : query.getKeyword().trim();
         Page<ResourceDiskType> page = diskTypeMapper.selectPage(new Page<>(pageNo(query), pageSize(query)), new LambdaQueryWrapper<ResourceDiskType>()
-                .and(query.getKeyword() != null && !query.getKeyword().isBlank(), wrapper -> wrapper.like(ResourceDiskType::getName, query.getKeyword().trim())
-                        .or().like(ResourceDiskType::getCode, query.getKeyword().trim()))
+                .and(!keyword.isEmpty(), wrapper -> wrapper.like(ResourceDiskType::getName, keyword)
+                        .or().like(ResourceDiskType::getCode, keyword))
                 .orderByAsc(ResourceDiskType::getSortOrder).orderByDesc(ResourceDiskType::getId));
         return PageResult.of(page.getRecords().stream().map(item -> diskVO(item, true)).toList(), page.getTotal(), pageNo(query), pageSize(query));
     }

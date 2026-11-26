@@ -5,10 +5,12 @@ import com.heima.common.R;
 import com.heima.modules.resource.dto.ResourceInvalidReportDTO;
 import com.heima.modules.resource.dto.ResourceQueryDTO;
 import com.heima.modules.resource.dto.ResourceSaveDTO;
+import com.heima.modules.resource.service.ResourceClaimService;
 import com.heima.modules.resource.service.ResourceEntitlementService;
 import com.heima.modules.resource.service.ResourceReportService;
 import com.heima.modules.resource.service.ResourceService;
 import com.heima.modules.resource.service.ResourceTradeService;
+import com.heima.modules.resource.vo.ResourceClaimVO;
 import com.heima.modules.resource.vo.ResourceEntitlementVO;
 import com.heima.modules.resource.vo.ResourceVO;
 import com.heima.modules.resource.vo.ResourceVersionVO;
@@ -36,6 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserResourceController {
     private final ResourceService resourceService;
     private final ResourceTradeService tradeService;
+    private final ResourceClaimService claimService;
     private final ResourceEntitlementService entitlementService;
     private final ResourceReportService reportService;
 
@@ -91,10 +94,16 @@ public class UserResourceController {
     }
 
     @PostMapping("/{id}/redeem")
-    @Operation(summary = "事务化积分兑换，重复兑换不扣积分")
+    @Operation(summary = "事务化积分兑换，按实际扣除积分和配置单价给作者返佣")
     public R<Void> redeem(@PathVariable Long id) {
         tradeService.redeemPoints(UserUtil.requireFrontUser().getId(), id);
         return R.ok();
+    }
+
+    @PostMapping("/{id}/claim")
+    @Operation(summary = "会员按自然日额度领取资源；重复领取不占额度且不返佣")
+    public R<ResourceClaimVO> claim(@PathVariable Long id) {
+        return R.ok(claimService.claim(UserUtil.requireFrontUser().getId(), id));
     }
 
     @PostMapping("/{id}/invalid-reports")

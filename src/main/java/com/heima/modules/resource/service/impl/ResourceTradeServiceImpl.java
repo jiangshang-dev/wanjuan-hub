@@ -3,6 +3,7 @@ package com.heima.modules.resource.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.heima.exception.ServiceException;
+import com.heima.modules.membership.service.MembershipService;
 import com.heima.modules.resource.entity.ResourceEntitlement;
 import com.heima.modules.resource.entity.ResourceInfo;
 import com.heima.modules.resource.entity.ResourceVersion;
@@ -12,6 +13,7 @@ import com.heima.modules.resource.mapper.ResourceInfoMapper;
 import com.heima.modules.resource.mapper.ResourceVersionMapper;
 import com.heima.modules.points.service.PointsService;
 import com.heima.modules.resource.service.ResourceTradeService;
+import com.heima.modules.wallet.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -27,6 +29,8 @@ public class ResourceTradeServiceImpl implements ResourceTradeService {
     private final ResourceVersionMapper versionMapper;
     private final ResourceEntitlementMapper entitlementMapper;
     private final PointsService pointsService;
+    private final MembershipService membershipService;
+    private final WalletService walletService;
 
     @Override
     @Transactional(readOnly = true)
@@ -92,6 +96,11 @@ public class ResourceTradeServiceImpl implements ResourceTradeService {
         ResourceEntitlement granted = entitlement(userId, resourceId);
         if (granted == null || !"ACTIVE".equals(granted.getStatus()) || !"POINTS".equals(granted.getSourceType())) {
             throw new ServiceException(409, "资源权益已变化，兑换未生效");
+        }
+        if (!resource.getAuthorId().equals(userId)) {
+            BigDecimal commission = membershipService.commissionConfig().getPointsUnitPrice().multiply(BigDecimal.valueOf(points));
+            walletService.credit(resource.getAuthorId(), "POINTS_RESOURCE_COMMISSION", userId + ":" + resourceId,
+                    commission, "积分资源兑换返佣，扣除积分：" + points + "，资源ID：" + resourceId);
         }
     }
 

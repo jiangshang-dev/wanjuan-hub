@@ -125,14 +125,14 @@ watch(() => [props.targetType, props.targetId], () => {
         <article v-for="root in roots" :key="root.id" class="comment-item">
           <div class="comment-meta"><strong>用户 #{{ root.authorId }}</strong><time>{{ formatDate(root.createTime, true) }}</time></div>
           <div class="markdown-body comment-content" v-html="renderMarkdown(root.content)" />
-          <div class="comment-actions"><InteractionBar target-type="COMMENT" :target-id="root.id" :like-count="root.likeCount" :show-favorite="false" compact /><a-button type="text" size="small" @click="startReply(root)">回复</a-button><ReportButton target-type="COMMENT" :target-id="root.id" /></div>
+          <div class="comment-actions"><InteractionBar target-type="COMMENT" :target-id="root.id" :like-count="root.likeCount" :dislike-count="root.dislikeCount" :show-favorite="false" compact /><a-button type="text" size="small" @click="startReply(root)">回复</a-button><ReportButton target-type="COMMENT" :target-id="root.id" /></div>
           <div class="comment-replies">
             <a-button v-if="Number(root.replyCount) && !replies[String(root.id)]" type="link" size="small" :loading="replyLoading[String(root.id)]" @click="loadReplies(root)">查看 {{ root.replyCount }} 条回复</a-button>
             <template v-if="replies[String(root.id)]">
               <article v-for="reply in replies[String(root.id)].records" :key="reply.id" class="comment-item reply-item">
                 <div class="comment-meta"><strong>用户 #{{ reply.authorId }}</strong><span v-if="reply.replyToId">回复评论 #{{ reply.replyToId }}</span><time>{{ formatDate(reply.createTime, true) }}</time></div>
                 <div class="markdown-body comment-content" v-html="renderMarkdown(reply.content)" />
-                <div class="comment-actions"><InteractionBar target-type="COMMENT" :target-id="reply.id" :like-count="reply.likeCount" :show-favorite="false" compact /><a-button type="text" size="small" @click="startReply(reply)">回复</a-button><ReportButton target-type="COMMENT" :target-id="reply.id" /></div>
+                <div class="comment-actions"><InteractionBar target-type="COMMENT" :target-id="reply.id" :like-count="reply.likeCount" :dislike-count="reply.dislikeCount" :show-favorite="false" compact /><a-button type="text" size="small" @click="startReply(reply)">回复</a-button><ReportButton target-type="COMMENT" :target-id="reply.id" /></div>
               </article>
               <a-button v-if="replies[String(root.id)].records.length < replies[String(root.id)].total" type="link" size="small" :loading="replyLoading[String(root.id)]" @click="loadReplies(root, replies[String(root.id)].page + 1)">加载更多回复</a-button>
             </template>

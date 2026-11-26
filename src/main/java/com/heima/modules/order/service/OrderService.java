@@ -1,12 +1,15 @@
 package com.heima.modules.order.service;
 
 import com.heima.common.PageResult;
+import com.heima.modules.membership.dto.MembershipDtos.CreateOrderRequest;
 import com.heima.modules.order.dto.OrderDtos;
 import com.heima.modules.order.entity.OrderEntities.Order;
 import com.heima.modules.order.vo.OrderVO;
 
 public interface OrderService {
     OrderVO create(OrderDtos.CreateRequest request, Long userId);
+
+    OrderVO createMembership(CreateOrderRequest request, Long userId);
 
     PageResult<OrderVO> userPage(OrderDtos.Query query, Long userId);
 

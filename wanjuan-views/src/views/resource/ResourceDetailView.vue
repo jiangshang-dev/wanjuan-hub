@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { message, Modal } from 'ant-design-vue'
 import { resourceApi, userResourceApi } from '../../api/resource'
@@ -17,7 +17,9 @@ const links = ref([])
 const attachmentLoadingId = ref('')
 const attachments = ref({})
 const redeeming = ref(false)
+const claiming = ref(false)
 const reportOpen = ref(false)
+const isMemberResource = computed(() => ['MEMBER', 'PAID'].includes(resource.value?.accessType))
 const reportSaving = ref(false)
 const reportFormRef = ref()
 const reportForm = reactive({ linkId: undefined, reason: '' })
@@ -101,6 +103,28 @@ function redeem() {
   })
 }
 
+function claim() {
+  Modal.confirm({
+    title: '领取会员资源',
+    content: `首次领取《${resource.value?.title || '该资源'}》将占用今日 1 个不同资源额度，重复领取不会重复扣减。确定继续吗？`,
+    okText: '确认领取',
+    cancelText: '取消',
+    async onOk() {
+      claiming.value = true
+      try {
+        const result = await userResourceApi.claim(route.params.id)
+        if (result?.duplicated) message.success('该资源已领取过，本次未重复占用会员额度')
+        else message.success(`领取成功，今日剩余 ${result?.remainingToday ?? '-'} 个会员资源额度`)
+        await load()
+      } catch (error) {
+        message.error(errorText(error))
+      } finally {
+        claiming.value = false
+      }
+    },
+  })
+}
+
 function openReport() {
   Object.assign(reportForm, { linkId: undefined, reason: '' })
   reportOpen.value = true
@@ -143,7 +167,7 @@ watch(() => route.params.id, (value, oldValue) => { if (value && value !== oldVa
             <div class="resource-copyright"><strong>版权声明</strong><br>{{ resource.copyrightNotice }}</div>
           </section>
           <section class="resource-access-panel">
-            <div class="resource-access-heading"><h3>网盘链接</h3><a-space wrap><a-button v-if="resource.accessType === 'POINTS' && !resource.accessGranted" type="primary" :loading="redeeming" @click="redeem">积分兑换</a-button><a-button type="primary" :loading="linksLoading" @click="loadLinks">获取网盘链接</a-button></a-space></div>
+            <div class="resource-access-heading"><h3>网盘链接</h3><a-space wrap><a-button v-if="resource.accessType === 'POINTS' && !resource.accessGranted" type="primary" :loading="redeeming" @click="redeem">积分兑换</a-button><a-button v-if="isMemberResource && !resource.accessGranted" type="primary" :loading="claiming" @click="claim">会员领取</a-button><a-button type="primary" :loading="linksLoading" @click="loadLinks">{{ resource.accessType === 'FREE' || resource.accessGranted ? '查看网盘链接' : '获取网盘链接' }}</a-button></a-space></div>
             <p class="resource-access-tip">链接与提取码由后端统一鉴权后返回。未授权时不会获取或展示任何敏感信息。</p>
             <div v-if="links.length" class="resource-link-list">
               <div v-for="link in links" :key="link.id" class="resource-link-item">

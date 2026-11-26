@@ -41,7 +41,7 @@ public final class WalletVOs {
         @Schema(description = "提现单号") private String withdrawalNo;
         @Schema(description = "用户ID") private Long userId;
         @Schema(description = "提现金额") private BigDecimal amount;
-        @Schema(description = "脱敏后的支付宝账号") private String alipayAccount;
+        @Schema(description = "支付宝账号；用户接口和后台列表脱敏，仅后台提现详情返回完整账号供线下转账") private String alipayAccount;
         @Schema(description = "状态：PENDING审核中，SUCCEEDED人工确认成功，REJECTED已拒绝并解冻") private String status;
         @Schema(description = "管理员填写的线下真实支付宝转账流水号") private String externalTradeNo;
         @Schema(description = "处理备注或拒绝原因") private String handleNote;

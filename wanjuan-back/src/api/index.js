@@ -1,6 +1,7 @@
 import request from './request'
 
 export const authApi = {
+  captcha: () => request.post('/api/auth/captcha', {}, { skipAuth: true }),
   login: (data) => request.post('/api/admin/auth/login', data, { skipAuth: true }),
   logout: (refreshToken) => request.post('/api/admin/auth/logout', { refreshToken }, { skipAuth: true }),
   me: () => request.get('/api/admin/auth/me'),

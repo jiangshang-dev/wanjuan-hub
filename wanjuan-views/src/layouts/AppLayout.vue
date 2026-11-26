@@ -19,7 +19,7 @@ const selectedKeys = computed(() => {
   if (['forum-topic', 'forum-topic-create', 'forum-topic-edit'].includes(route.name)) return ['forum']
   if (['blog-create', 'blog-edit', 'blog-versions'].includes(route.name)) return ['my-blogs']
   if (route.name === 'order-detail') return ['orders']
-  if (['profile', 'security', 'activity', 'membership', 'messages'].includes(route.name)) return ['user-center']
+  if (['profile', 'security', 'activity', 'membership', 'messages', 'feedbacks'].includes(route.name)) return ['user-center']
   return [route.name]
 })
 const avatarText = computed(() => displayName(auth.user).slice(0, 1).toUpperCase())
@@ -78,6 +78,7 @@ async function logout() {
                   <a-menu-item key="user-center" @click="router.push('/my')">个人中心</a-menu-item>
                   <a-menu-item key="membership" @click="router.push('/my/membership')">会员与积分</a-menu-item>
                   <a-menu-item key="messages" @click="router.push('/my/messages')">消息中心</a-menu-item>
+                  <a-menu-item key="feedbacks" @click="router.push('/my/feedbacks')">我的反馈</a-menu-item>
                   <a-menu-divider />
                   <a-menu-item key="my-blogs" @click="router.push('/my/blogs')">我的博客</a-menu-item>
                   <a-menu-item key="my-resources" @click="router.push('/my/resources')">我的发布</a-menu-item>

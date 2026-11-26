@@ -148,7 +148,7 @@ watch(() => route.params.id, (value, oldValue) => { if (value && value !== oldVa
             <div class="article-author"><a-avatar :size="38">{{ String(topic.authorId).slice(0, 1) }}</a-avatar><div><strong>用户 #{{ topic.authorId }}</strong><span>发布于 {{ formatDate(topic.createTime, true) }} · {{ topic.viewCount || 0 }} 次浏览</span></div><a-button v-if="!isSelf" size="small" :loading="followPending" :type="following ? 'default' : 'primary'" @click="toggleFollow">{{ following ? '已关注' : '关注作者' }}</a-button></div>
           </header>
           <div class="markdown-body article-content" v-html="contentHtml" />
-          <footer class="topic-actions"><InteractionButtons target-type="FORUM" :target-id="topic.id" :like-count="topic.likeCount" :favorite-count="topic.favoriteCount" check-state /><ReportAction target-type="FORUM" :target-id="topic.id" :compact="false" /><a-button v-if="!Number(topic.locked)" type="primary" @click="startReply()">回复主题</a-button></footer>
+          <footer class="topic-actions"><InteractionButtons target-type="FORUM" :target-id="topic.id" :like-count="topic.likeCount" :dislike-count="topic.dislikeCount" :favorite-count="topic.favoriteCount" check-state /><ReportAction target-type="FORUM" :target-id="topic.id" :compact="false" /><a-button v-if="!Number(topic.locked)" type="primary" @click="startReply()">回复主题</a-button></footer>
         </article>
 
         <section class="content-card post-section">
@@ -158,7 +158,7 @@ watch(() => route.params.id, (value, oldValue) => { if (value && value !== oldVa
             <div v-if="posts.length" class="post-list">
               <article v-for="post in posts" :key="post.id" class="post-item">
                 <div class="post-floor">#{{ post.floorNo || post.id }}</div>
-                <div class="post-body"><div class="comment-meta"><strong>用户 #{{ post.authorId }}</strong><span v-if="post.replyToId">引用跟帖 #{{ post.replyToId }}</span><time>{{ formatDate(post.createTime, true) }}</time></div><div class="markdown-body post-content" v-html="renderMarkdown(post.content)" /><div class="comment-actions"><InteractionButtons target-type="FORUM_POST" :target-id="post.id" :like-count="post.likeCount" :show-favorite="false" compact /><a-button v-if="!Number(topic.locked)" type="text" size="small" @click="startReply(post)">回复</a-button><ReportAction target-type="FORUM_POST" :target-id="post.id" /></div></div>
+                <div class="post-body"><div class="comment-meta"><strong>用户 #{{ post.authorId }}</strong><span v-if="post.replyToId">引用跟帖 #{{ post.replyToId }}</span><time>{{ formatDate(post.createTime, true) }}</time></div><div class="markdown-body post-content" v-html="renderMarkdown(post.content)" /><div class="comment-actions"><InteractionButtons target-type="FORUM_POST" :target-id="post.id" :like-count="post.likeCount" :dislike-count="post.dislikeCount" :show-favorite="false" compact /><a-button v-if="!Number(topic.locked)" type="text" size="small" @click="startReply(post)">回复</a-button><ReportAction target-type="FORUM_POST" :target-id="post.id" /></div></div>
               </article>
             </div>
             <a-empty v-else-if="!postsLoading" description="暂无公开跟帖" />

@@ -19,5 +19,6 @@ export const userResourceApi = {
   versions: (id, params) => request.get(`/api/user/resources/${id}/versions`, { params }),
   entitlements: (params) => request.get('/api/user/resources/entitlements', { params }),
   redeem: (id) => request.post(`/api/user/resources/${id}/redeem`),
+  claim: (id) => request.post(`/api/user/resources/${id}/claim`),
   report: (id, data) => request.post(`/api/user/resources/${id}/invalid-reports`, data),
 }

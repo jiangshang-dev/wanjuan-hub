@@ -13,7 +13,11 @@ public class OrderVO {
     @Schema(description = "订单ID") private Long id;
     @Schema(description = "订单号") private String orderNo;
     @Schema(description = "购买用户ID") private Long userId;
-    @Schema(description = "资源ID") private Long resourceId;
+    @Schema(description = "订单类型：RESOURCE历史资源订单，MEMBERSHIP会员订单") private String orderType;
+    @Schema(description = "资源ID，会员订单为空") private Long resourceId;
+    @Schema(description = "会员套餐ID，资源订单为空") private Long membershipPlanId;
+    @Schema(description = "下单时套餐有效天数快照") private Integer membershipDurationDays;
+    @Schema(description = "下单时套餐每日领取数量快照") private Integer membershipDailyLimit;
     @Schema(description = "订单金额") private BigDecimal totalAmount;
     @Schema(description = "币种") private String currency;
     @Schema(description = "客户端类型") private String clientType;

@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
+import SiteExperience from './components/SiteExperience.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -22,5 +23,6 @@ onBeforeUnmount(() => window.removeEventListener('auth:login', onLoginRequired))
 </script>
 
 <template>
+  <SiteExperience />
   <router-view />
 </template>

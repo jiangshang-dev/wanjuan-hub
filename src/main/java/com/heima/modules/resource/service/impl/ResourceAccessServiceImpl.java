@@ -65,6 +65,7 @@ public class ResourceAccessServiceImpl implements ResourceAccessService {
             return new AccessDecision(false, "资源访问类型异常");
         }
         return switch (accessType) {
+            case FREE -> new AccessDecision(true, "免费资源");
             case GUEST_FREE -> new AccessDecision(true, "游客免费");
             case LOGIN_FREE -> userId == null ? new AccessDecision(false, "请先登录") : new AccessDecision(true, "登录免费");
             case REPLY_REQUIRED -> userId == null ? new AccessDecision(false, "请先登录并回复")
@@ -73,6 +74,9 @@ public class ResourceAccessServiceImpl implements ResourceAccessService {
             case POINTS -> userId == null ? new AccessDecision(false, "请先登录并兑换")
                     : entitlementService.hasActiveAccess(userId, resource.getId()) ? new AccessDecision(true, "已兑换")
                     : new AccessDecision(false, "请使用积分兑换");
+            case MEMBER -> userId == null ? new AccessDecision(false, "请先登录并领取")
+                    : entitlementService.hasActiveAccess(userId, resource.getId()) ? new AccessDecision(true, "已领取")
+                    : new AccessDecision(false, "请在会员有效期内领取后访问");
             case PAID -> userId == null ? new AccessDecision(false, "请先登录并购买")
                     : entitlementService.hasActiveAccess(userId, resource.getId()) ? new AccessDecision(true, "已购买")
                     : new AccessDecision(false, "请购买后访问");

@@ -1,51 +1,29 @@
 package com.heima.modules.search.listener;
 
-import com.heima.modules.audit.event.AuditCompletedEvent;
 import com.heima.modules.blog.event.BlogPublishedEvent;
 import com.heima.modules.search.event.SearchIndexRefreshEvent;
-import com.heima.modules.search.service.SearchIndexService;
+import com.heima.modules.search.service.SearchOutboxService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
-@Slf4j
+import java.util.Set;
+
 @Component
 @RequiredArgsConstructor
 public class SearchEventListener {
-    private final SearchIndexService searchIndexService;
+    private static final Set<String> PUBLIC_TYPES = Set.of("BLOG", "FORUM_TOPIC");
+    private final SearchOutboxService searchOutboxService;
 
-    @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+    @EventListener
     public void onBlogPublished(BlogPublishedEvent event) {
-        synchronize("BLOG", event.articleId());
+        searchOutboxService.record("BLOG", event.articleId());
     }
 
-    @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
-    public void onAuditCompleted(AuditCompletedEvent event) {
-        String type = switch (event.bizType()) {
-            case "BLOG_ARTICLE" -> "BLOG";
-            case "RESOURCE" -> "RESOURCE";
-            case "FORUM_TOPIC" -> "FORUM_TOPIC";
-            default -> null;
-        };
-        if (type != null) synchronize(type, event.bizId());
-    }
-
-    @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+    @EventListener
     public void onIndexRefresh(SearchIndexRefreshEvent event) {
-        synchronize(event.contentType(), event.contentId());
-    }
-
-    private void synchronize(String type, Long id) {
-        try {
-            searchIndexService.synchronize(type, id);
-        } catch (Exception ex) {
-            log.error("Failed to synchronize public search index, type={}, id={}", type, id, ex);
+        if (PUBLIC_TYPES.contains(event.contentType())) {
+            searchOutboxService.record(event.contentType(), event.contentId());
         }
     }
 }

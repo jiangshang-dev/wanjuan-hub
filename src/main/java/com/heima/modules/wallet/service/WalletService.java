@@ -17,5 +17,6 @@ public interface WalletService {
     WithdrawalVO applyWithdrawal(Long userId, WithdrawRequest request);
     PageResult<WithdrawalVO> userWithdrawals(Long userId, PageQuery query);
     PageResult<WithdrawalVO> adminWithdrawals(PageQuery query);
+    WithdrawalVO adminWithdrawal(Long id);
     WithdrawalVO handleWithdrawal(Long id, HandleRequest request, Long adminId);
 }

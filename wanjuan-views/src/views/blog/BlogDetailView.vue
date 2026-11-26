@@ -53,7 +53,7 @@ watch(() => route.params.id, (value, oldValue) => { if (value && value !== oldVa
           <footer class="article-footer">
             <div v-if="blogTags(blog).length" class="article-tags"><span>标签：</span><a-tag v-for="tag in blogTags(blog)" :key="tag.id || tag">{{ tagName(tag) }}</a-tag></div>
             <div v-if="blog.type === 'REPRINT' || blog.originalType === 'REPRINT'" class="article-source">本文转载自 {{ blog.sourceName || '外部来源' }}<a v-if="safeSourceUrl" :href="safeSourceUrl" target="_blank" rel="noopener noreferrer">查看原文 →</a></div>
-            <div class="topic-actions blog-interactions"><InteractionButtons target-type="BLOG" :target-id="blog.id" :like-count="blog.likeCount" :favorite-count="blog.favoriteCount" check-state /><ReportAction target-type="BLOG" :target-id="blog.id" :compact="false" /></div>
+            <div class="topic-actions blog-interactions"><InteractionButtons target-type="BLOG" :target-id="blog.id" :like-count="blog.likeCount" :dislike-count="blog.dislikeCount" :favorite-count="blog.favoriteCount" check-state /><ReportAction target-type="BLOG" :target-id="blog.id" :compact="false" /></div>
           </footer>
         </article>
         <CommentSection target-type="BLOG" :target-id="blog.id" />

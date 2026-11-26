@@ -74,8 +74,9 @@ public class ResourceServiceImpl implements ResourceService {
     @Override
     @Transactional(readOnly = true)
     public PageResult<ResourceVO> publicPage(ResourceQueryDTO query) {
+        String accessType = query.getAccessType() == null ? null : AccessType.valueOf(query.getAccessType()).normalize().name();
         Page<ResourceInfo> page = resourceMapper.selectPublicPage(new Page<>(pageNo(query), pageSize(query)), query.getCategoryId(),
-                query.getTagId(), query.getAccessType(), cleanKeyword(query.getKeyword()));
+                query.getTagId(), accessType, cleanKeyword(query.getKeyword()));
         return PageResult.of(page.getRecords().stream().map(resource -> toVO(resource, version(resource.getId(), resource.getPublishedVersionNo()), true)).toList(),
                 page.getTotal(), pageNo(query), pageSize(query));
     }
@@ -245,15 +246,11 @@ public class ResourceServiceImpl implements ResourceService {
         }
         ResourceCategory category = categoryMapper.selectById(request.getCategoryId());
         if (category == null || category.getStatus() != 1) throw new ServiceException(400, "分类不存在或已停用");
-        AccessType accessType = AccessType.valueOf(request.getAccessType());
+        AccessType accessType = AccessType.valueOf(request.getAccessType()).normalize();
         if (accessType == AccessType.POINTS) {
             if (request.getPointsPrice() == null || request.getPrice() != null) throw new ServiceException(400, "积分资源仅填写有效积分价格");
-        } else if (accessType == AccessType.PAID) {
-            if (request.getPrice() == null || request.getPrice().signum() <= 0 || request.getPointsPrice() != null) {
-                throw new ServiceException(400, "付费资源仅填写有效现金价格");
-            }
         } else if (request.getPrice() != null || request.getPointsPrice() != null) {
-            throw new ServiceException(400, "非收费资源不能填写价格");
+            throw new ServiceException(400, "免费和会员资源不能填写积分或现金价格");
         }
         fileService.requireOwnedImages(allFileIds(request), userId);
     }
@@ -263,6 +260,9 @@ public class ResourceServiceImpl implements ResourceService {
         BeanUtils.copyProperties(request, version, "attachmentFileIds", "links");
         version.setResourceId(resourceId);
         version.setVersionNo(versionNo);
+        version.setAccessType(AccessType.valueOf(request.getAccessType()).normalize().name());
+        if (!AccessType.POINTS.name().equals(version.getAccessType())) version.setPointsPrice(null);
+        version.setPrice(null);
         version.setAttachmentFileIds(JSON.writeValueAsString(request.getAttachmentFileIds() == null ? List.of() : new ArrayList<>(new LinkedHashSet<>(request.getAttachmentFileIds()))));
         version.setStatus(VersionStatus.DRAFT.name());
         return version;

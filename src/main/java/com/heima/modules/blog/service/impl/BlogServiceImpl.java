@@ -256,7 +256,7 @@ public class BlogServiceImpl implements BlogService {
     @Override
     @Transactional
     public void deleteCategory(Long id) {
-        Long used = articleMapper.selectCount(new LambdaQueryWrapper<BlogArticle>().eq(BlogArticle::getCategoryId, id).eq(BlogArticle::getDeleted, 0));
+        Long used = articleMapper.selectCount(new LambdaQueryWrapper<BlogArticle>().eq(BlogArticle::getCategoryId, id));
         if (used > 0) throw new ServiceException(409, "分类下仍有文章，不能删除");
         if (categoryMapper.deleteById(id) == 0) throw new ServiceException(404, "分类不存在");
     }

@@ -8,6 +8,7 @@ import com.heima.infrastructure.payment.PaymentGatewayModels.PaymentCommand;
 import com.heima.infrastructure.payment.PaymentGatewayModels.PaymentInstruction;
 import com.heima.infrastructure.payment.PaymentGatewayModels.PaymentNotification;
 import com.heima.infrastructure.payment.PaymentGatewayRegistry;
+import com.heima.modules.membership.service.MembershipService;
 import com.heima.modules.order.entity.OrderEntities.Item;
 import com.heima.modules.order.entity.OrderEntities.Order;
 import com.heima.modules.order.mapper.OrderItemMapper;
@@ -43,6 +44,7 @@ public class PaymentProcessingService {
     private final TradeReconciliationMapper reconciliationMapper;
     private final PaymentGatewayRegistry gatewayRegistry;
     private final ResourceTradeService resourceTradeService;
+    private final MembershipService membershipService;
     private final PaymentEventPublisher eventPublisher;
     private final OrderService orderService;
 
@@ -245,7 +247,12 @@ public class PaymentProcessingService {
     }
 
     private void grant(Order order) {
-        resourceTradeService.grantPaidAccess(order.getUserId(), order.getResourceId(), order.getOrderNo());
+        if ("MEMBERSHIP".equals(order.getOrderType())) {
+            membershipService.activate(order.getUserId(), order.getMembershipPlanId(), order.getMembershipDurationDays(),
+                    order.getMembershipDailyLimit(), order.getOrderNo());
+        } else {
+            resourceTradeService.grantPaidAccess(order.getUserId(), order.getResourceId(), order.getOrderNo());
+        }
         order.setGrantStatus("GRANTED");
         orderMapper.updateById(order);
         eventPublisher.publish(new PaymentCompletedEvent(order.getOrderNo(), order.getUserId(), order.getResourceId(),

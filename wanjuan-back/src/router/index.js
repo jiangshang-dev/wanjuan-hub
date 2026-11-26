@@ -28,6 +28,8 @@ const routeDefinitions = {
   '/trade/reconciliations': { name: 'trade-reconciliations', title: '对账记录', component: () => import('../views/orders/ReconciliationsView.vue') },
   '/trade/refunds': { name: 'trade-refunds', title: '退款管理', component: () => import('../views/orders/RefundsView.vue') },
   '/trade/entitlements': { name: 'trade-entitlements', title: '资源授权', component: () => import('../views/orders/EntitlementsView.vue') },
+  '/trade/membership-plans': { name: 'trade-membership-plans', title: '会员套餐', component: () => import('../views/orders/MembershipPlansView.vue') },
+  '/trade/withdrawals': { name: 'trade-withdrawals', title: '提现管理', component: () => import('../views/orders/WithdrawalsView.vue') },
   '/points/rules': { name: 'points-rules', title: '积分规则', component: () => import('../views/points/PointsManagementView.vue') },
   '/points/levels': { name: 'points-levels', title: '等级配置', component: () => import('../views/points/PointsManagementView.vue') },
   '/points/adjustments': { name: 'points-adjustments', title: '积分调整与流水', component: () => import('../views/points/PointsManagementView.vue') },
@@ -38,6 +40,9 @@ const routeDefinitions = {
   '/operation/friend-links': { name: 'operation-friend-links', title: '友情链接', component: () => import('../views/operation/OperationManagementView.vue') },
   '/operation/hot-searches': { name: 'operation-hot-searches', title: '热门搜索', component: () => import('../views/operation/OperationManagementView.vue') },
   '/operation/configs': { name: 'operation-configs', title: '网站参数', component: () => import('../views/operation/OperationManagementView.vue') },
+  '/operation/gray-days': { name: 'operation-gray-days', title: '灰色日管理', component: () => import('../views/operation/GrayDaysView.vue') },
+  '/operation/background-music': { name: 'operation-background-music', title: '背景音乐', component: () => import('../views/operation/BackgroundMusicView.vue') },
+  '/operation/feedbacks': { name: 'operation-feedbacks', title: '意见反馈', component: () => import('../views/operation/FeedbacksView.vue') },
 }
 const pathAliases = {
   '/': '/dashboard', '/workbench': '/dashboard',

@@ -3,6 +3,7 @@ package com.heima.modules.payment;
 import com.heima.exception.ServiceException;
 import com.heima.infrastructure.payment.PaymentGatewayModels.PaymentNotification;
 import com.heima.infrastructure.payment.PaymentGatewayRegistry;
+import com.heima.modules.membership.service.MembershipService;
 import com.heima.modules.order.entity.OrderEntities.Order;
 import com.heima.modules.order.mapper.OrderItemMapper;
 import com.heima.modules.order.mapper.OrderMapper;
@@ -43,6 +44,7 @@ class PaymentProcessingServiceTest {
     @Mock private TradeReconciliationMapper reconciliationMapper;
     @Mock private PaymentGatewayRegistry gatewayRegistry;
     @Mock private ResourceTradeService resourceTradeService;
+    @Mock private MembershipService membershipService;
     @Mock private PaymentEventPublisher eventPublisher;
     @Mock private OrderService orderService;
     @InjectMocks private PaymentProcessingService service;
@@ -139,6 +141,37 @@ class PaymentProcessingServiceTest {
         service.recoverGrant("O1");
         verify(resourceTradeService).grantPaidAccess(2L, 3L, "O1");
         verify(eventPublisher).publish(any(PaymentCompletedEvent.class));
+    }
+
+    @Test
+    void paidMembershipNotificationActivatesSnapshotPlan() {
+        order.setOrderType("MEMBERSHIP");
+        order.setResourceId(null);
+        order.setMembershipPlanId(9L);
+        order.setMembershipDurationDays(30);
+        order.setMembershipDailyLimit(5);
+        mockUnseenNotification();
+        mockLockedPayment();
+
+        service.handleNotification("ALIPAY", notification("12.34", true));
+
+        verify(membershipService).activate(2L, 9L, 30, 5, "O1");
+        verifyNoInteractions(resourceTradeService);
+        assertEquals("GRANTED", order.getGrantStatus());
+    }
+
+    @Test
+    void unsuccessfulMembershipNotificationDoesNotActivate() {
+        order.setOrderType("MEMBERSHIP");
+        order.setResourceId(null);
+        order.setMembershipPlanId(9L);
+        mockUnseenNotification();
+        mockLockedPayment();
+
+        service.handleNotification("ALIPAY", notification("12.34", false));
+
+        verifyNoInteractions(membershipService, resourceTradeService, eventPublisher);
+        assertEquals("NONE", order.getGrantStatus());
     }
 
     private void mockUnseenNotification() {

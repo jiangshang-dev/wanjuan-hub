@@ -17,6 +17,7 @@ import com.heima.modules.forum.mapper.ForumMappers.TopicVersionMapper;
 import com.heima.modules.forum.service.ForumService;
 import com.heima.modules.message.event.UserNotificationEvent;
 import com.heima.modules.message.service.MentionService;
+import com.heima.modules.search.event.SearchIndexRefreshEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
@@ -73,6 +74,7 @@ public class ForumAuditListener {
                 boardMapper.update(null, new LambdaUpdateWrapper<Board>().eq(Board::getId, topic.getBoardId())
                         .setSql("topic_count = GREATEST(0, topic_count + 1)"));
             }
+            eventPublisher.publishEvent(new SearchIndexRefreshEvent("FORUM_TOPIC", topic.getId()));
             mentionService.publishApprovedMentions(version.getContent(), topic.getAuthorId(), "FORUM_TOPIC", topic.getId(), version.getVersionNo());
             return;
         }

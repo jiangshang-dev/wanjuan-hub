@@ -15,6 +15,7 @@ button, input, textarea { font: inherit; }
 a { color: var(--primary); text-decoration: none; }
 button:focus-visible, a:focus-visible { outline: 3px solid rgba(49, 87, 213, .25); outline-offset: 3px; }
 #app { min-height: 100vh; }
+html.gray-day body { filter: grayscale(1); }
 .full-width { width: 100%; }
 .app-layout { min-height: 100vh; background: #f5f7fb; }
 .site-header { position: sticky; top: 0; z-index: 20; height: 68px; padding: 0; background: rgba(255, 255, 255, .96); border-bottom: 1px solid var(--line); backdrop-filter: blur(12px); }
@@ -261,6 +262,8 @@ button:focus-visible, a:focus-visible { outline: 3px solid rgba(49, 87, 213, .25
 .interaction-bar { display: inline-flex; align-items: center; gap: 6px; }
 .interaction-bar .ant-btn { display: inline-flex; align-items: center; gap: 5px; color: #68738a; }
 .interaction-bar .ant-btn.active { color: var(--primary); background: #edf2ff; }
+.interaction-bar .ant-btn.dislike-active { color: #c73e4d; background: #fff1f0; }
+.interaction-bar .ant-btn:disabled { color: #b6bdc9; background: transparent; }
 .interaction-bar.compact { gap: 0; }
 .interaction-bar.compact .ant-btn { padding-inline: 6px; }
 .report-button { color: #8a94a6; }

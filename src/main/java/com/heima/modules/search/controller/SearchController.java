@@ -7,6 +7,8 @@ import com.heima.modules.search.service.SearchService;
 import com.heima.security.context.LoginUser;
 import com.heima.utils.UserUtil;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -29,7 +31,11 @@ public class SearchController {
     private final SearchService searchService;
 
     @GetMapping
-    @Operation(summary = "使用MySQL ngram全文索引搜索公开内容")
+    @Operation(summary = "使用Elasticsearch IK分词搜索公开博客和论坛主题",
+            description = "ES不可用时返回503，不回退到MySQL；结果标题和摘要经过HTML安全处理")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "搜索成功"),
+            @ApiResponse(responseCode = "400", description = "关键词、类型或分页参数不支持"),
+            @ApiResponse(responseCode = "503", description = "Elasticsearch暂不可用")})
     public R<PageResult<SearchResultVO>> search(@RequestParam(defaultValue = "") @Size(max = 100) String keyword,
                                                 @RequestParam(required = false) @Size(max = 24) String type,
                                                 @RequestParam(defaultValue = "1") @Min(1) long page,

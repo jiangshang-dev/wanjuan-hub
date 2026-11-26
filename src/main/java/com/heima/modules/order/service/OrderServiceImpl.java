@@ -4,6 +4,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.heima.common.PageResult;
 import com.heima.exception.ServiceException;
+import com.heima.modules.membership.dto.MembershipDtos.CreateOrderRequest;
+import com.heima.modules.membership.entity.MembershipEntities.Plan;
+import com.heima.modules.membership.service.MembershipService;
 import com.heima.modules.order.dto.OrderDtos;
 import com.heima.modules.order.entity.OrderEntities.Item;
 import com.heima.modules.order.entity.OrderEntities.Order;
@@ -39,6 +42,7 @@ public class OrderServiceImpl implements OrderService {
     private final TradePaymentMapper paymentMapper;
     private final TradeRefundMapper refundMapper;
     private final ResourceTradeService resourceTradeService;
+    private final MembershipService membershipService;
     private final TransactionTemplate transactionTemplate;
 
     @Override
@@ -66,6 +70,7 @@ public class OrderServiceImpl implements OrderService {
                 order.setOrderNo("O" + UUID.randomUUID().toString().replace("-", "").toUpperCase());
                 order.setIdempotencyKey(idempotencyKey);
                 order.setUserId(userId);
+                order.setOrderType("RESOURCE");
                 order.setResourceId(purchase.resourceId());
                 order.setTotalAmount(price);
                 order.setCurrency("CNY");
@@ -95,6 +100,49 @@ public class OrderServiceImpl implements OrderService {
                 throw e;
             }
             return repeatedOrder(repeated, request.getResourceId(), userId);
+        }
+    }
+
+    @Override
+    public OrderVO createMembership(CreateOrderRequest request, Long userId) {
+        String idempotencyKey = userId + ":MEMBERSHIP:" + request.getIdempotencyKey().trim();
+        Order existing = byIdempotencyKey(idempotencyKey);
+        if (existing != null) return repeatedMembershipOrder(existing, request.getPlanId(), userId);
+        try {
+            Order created = transactionTemplate.execute(status -> {
+                Order current = byIdempotencyKey(idempotencyKey);
+                if (current != null) return current;
+                Plan plan = membershipService.enabledPlan(request.getPlanId());
+                Order order = new Order();
+                order.setOrderNo("M" + UUID.randomUUID().toString().replace("-", "").toUpperCase());
+                order.setIdempotencyKey(idempotencyKey);
+                order.setUserId(userId);
+                order.setOrderType("MEMBERSHIP");
+                order.setMembershipPlanId(plan.getId());
+                order.setMembershipDurationDays(plan.getDurationDays());
+                order.setMembershipDailyLimit(plan.getDailyResourceLimit());
+                order.setTotalAmount(plan.getPrice().setScale(2, RoundingMode.UNNECESSARY));
+                order.setCurrency("CNY");
+                order.setClientType(request.getClientType());
+                order.setStatus("PENDING_PAYMENT");
+                order.setGrantStatus("NONE");
+                order.setExpireAt(LocalDateTime.now().plusMinutes(PAYMENT_EXPIRE_MINUTES));
+                order.setVersion(0);
+                orderMapper.insert(order);
+
+                Item item = new Item();
+                item.setOrderId(order.getId());
+                item.setResourceName(plan.getName());
+                item.setPrice(order.getTotalAmount());
+                itemMapper.insert(item);
+                return order;
+            });
+            if (created == null) throw new ServiceException(500, "会员订单创建失败");
+            return toVO(created, true);
+        } catch (DuplicateKeyException e) {
+            Order repeated = byIdempotencyKey(idempotencyKey);
+            if (repeated == null) throw e;
+            return repeatedMembershipOrder(repeated, request.getPlanId(), userId);
         }
     }
 
@@ -183,6 +231,14 @@ public class OrderServiceImpl implements OrderService {
 
     private OrderVO repeatedOrder(Order order, Long resourceId, Long userId) {
         if (!userId.equals(order.getUserId()) || !resourceId.equals(order.getResourceId())) {
+            throw new ServiceException(409, "幂等键已用于其他订单");
+        }
+        return toVO(order, true);
+    }
+
+    private OrderVO repeatedMembershipOrder(Order order, Long planId, Long userId) {
+        if (!userId.equals(order.getUserId()) || !"MEMBERSHIP".equals(order.getOrderType())
+                || !planId.equals(order.getMembershipPlanId())) {
             throw new ServiceException(409, "幂等键已用于其他订单");
         }
         return toVO(order, true);

@@ -6,6 +6,7 @@ import com.heima.common.PageResult;
 import com.heima.exception.ServiceException;
 import com.heima.modules.auth.entity.UserAccount;
 import com.heima.modules.auth.entity.UserProfile;
+import com.heima.modules.auth.mapper.RefreshTokenMapper;
 import com.heima.modules.auth.mapper.UserAccountMapper;
 import com.heima.modules.auth.mapper.UserProfileMapper;
 import com.heima.modules.system.dto.SystemDtos.*;
@@ -31,6 +32,7 @@ public class SystemService {
     private final SysRolePermissionMapper rolePermissionMapper;
     private final UserAccountMapper userMapper;
     private final UserProfileMapper profileMapper;
+    private final RefreshTokenMapper refreshTokenMapper;
     private final OperationLogMapper operationLogMapper;
     private final PasswordEncoder passwordEncoder;
 
@@ -62,7 +64,11 @@ public class SystemService {
     }
     @Transactional public void deleteAdmin(Long id) {
         if (id.equals(UserUtil.requireAdmin().getId())) throw new ServiceException(400,"不能删除当前管理员");
-        requiredAdmin(id); adminRoleMapper.delete(new LambdaQueryWrapper<SysAdminRole>().eq(SysAdminRole::getAdminId,id)); adminMapper.deleteById(id);
+        requiredAdmin(id);
+        if (adminMapper.hasBusinessReferences(id)) throw new ServiceException(409,"管理员存在审核或运营业务数据，不能删除，请改用停用");
+        adminRoleMapper.delete(new LambdaQueryWrapper<SysAdminRole>().eq(SysAdminRole::getAdminId,id));
+        refreshTokenMapper.deleteAll("ADMIN",id);
+        if (adminMapper.deleteById(id)!=1) throw new ServiceException(404,"管理员不存在");
     }
     @Transactional public void assignAdminRoles(Long id,List<Long> roleIds) {
         requiredAdmin(id); requireRoles(roleIds); adminRoleMapper.delete(new LambdaQueryWrapper<SysAdminRole>().eq(SysAdminRole::getAdminId,id));
@@ -134,7 +140,13 @@ public class SystemService {
         return new UserView(user.getId(),user.getUsername(),user.getEmail(),user.getPhone(),profile.getNickname(),user.getStatus(),user.getCreateTime());
     }
     public void userStatus(Long id,int status) { if (userMapper.updateStatusAndVersion(id,status)!=1) throw new ServiceException(404,"用户不存在"); }
-    public void deleteUser(Long id) { if (userMapper.selectById(id)==null) throw new ServiceException(404,"用户不存在"); userMapper.deleteById(id); }
+    @Transactional public void deleteUser(Long id) {
+        if (userMapper.selectById(id)==null) throw new ServiceException(404,"用户不存在");
+        if (userMapper.hasBusinessReferences(id)) throw new ServiceException(409,"用户存在内容、互动、积分或交易数据，不能删除，请改用停用");
+        profileMapper.deleteById(id);
+        refreshTokenMapper.deleteAll("USER",id);
+        if (userMapper.deleteById(id)!=1) throw new ServiceException(404,"用户不存在");
+    }
 
     public PageResult<OperationLogEntity> operationLogs(long page,long size,String keyword,String module,Boolean success) {
         Page<OperationLogEntity> result=operationLogMapper.selectPage(page(page,size),new LambdaQueryWrapper<OperationLogEntity>()

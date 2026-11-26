@@ -62,6 +62,15 @@ class ResourceAccessServiceTest {
     }
 
     @Test
+    void unifiedFreeAndMemberTypesUseFreeAccessOrClaimedEntitlement() {
+        assertTrue(accessService.decide(resource(), version(AccessType.FREE), null, false).granted());
+        ResourceVersion member = version(AccessType.MEMBER);
+        when(entitlementService.hasActiveAccess(8L, 1L)).thenReturn(false, true);
+        assertFalse(accessService.decide(resource(), member, 8L, false).granted());
+        assertTrue(accessService.decide(resource(), member, 8L, false).granted());
+    }
+
+    @Test
     void pointsAccessRequiresExistingEntitlement() {
         ResourceVersion points = version(AccessType.POINTS);
         when(entitlementService.hasActiveAccess(8L, 1L)).thenReturn(false, true);

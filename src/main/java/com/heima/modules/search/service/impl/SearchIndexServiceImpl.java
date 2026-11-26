@@ -1,6 +1,7 @@
 package com.heima.modules.search.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.heima.exception.ServiceException;
 import com.heima.modules.blog.entity.BlogArticle;
 import com.heima.modules.blog.entity.BlogArticleVersion;
@@ -10,127 +11,96 @@ import com.heima.modules.forum.entity.ForumEntities.Topic;
 import com.heima.modules.forum.entity.ForumEntities.TopicVersion;
 import com.heima.modules.forum.mapper.ForumMappers.TopicMapper;
 import com.heima.modules.forum.mapper.ForumMappers.TopicVersionMapper;
-import com.heima.modules.resource.entity.ResourceInfo;
-import com.heima.modules.resource.entity.ResourceVersion;
-import com.heima.modules.resource.mapper.ResourceInfoMapper;
-import com.heima.modules.resource.mapper.ResourceVersionMapper;
-import com.heima.modules.search.entity.SearchDocument;
-import com.heima.modules.search.mapper.SearchDocumentMapper;
+import com.heima.modules.search.dto.SearchIndexDocument;
+import com.heima.modules.search.entity.SearchInbox;
+import com.heima.modules.search.event.SearchIndexMessage;
+import com.heima.modules.search.mapper.SearchInboxMapper;
+import com.heima.modules.search.service.SearchIndexRepository;
 import com.heima.modules.search.service.SearchIndexService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Set;
+import java.time.LocalDateTime;
 import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 public class SearchIndexServiceImpl implements SearchIndexService {
-    private static final Set<String> SUPPORTED_TYPES = Set.of("BLOG", "RESOURCE", "FORUM_TOPIC");
     private static final Pattern EXTERNAL_LINK = Pattern.compile(
             "(?i)(?:https?|ftp)://[^\\s<>]+|magnet:\\?[^\\s<>]+");
-    private final SearchDocumentMapper documentMapper;
+    private final SearchIndexRepository indexRepository;
+    private final SearchInboxMapper inboxMapper;
     private final BlogArticleMapper articleMapper;
     private final BlogArticleVersionMapper articleVersionMapper;
-    private final ResourceInfoMapper resourceInfoMapper;
-    private final ResourceVersionMapper resourceVersionMapper;
     private final TopicMapper topicMapper;
     private final TopicVersionMapper topicVersionMapper;
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void indexPublic(String contentType, Long contentId, String title, String summary,
-                            String content, String url) {
-        String type = contentType == null ? "" : contentType.trim().toUpperCase();
-        if (!SUPPORTED_TYPES.contains(type) || contentId == null) {
-            throw new ServiceException("不支持的公开索引内容");
+    @Transactional
+    public void consume(SearchIndexMessage message) {
+        if (message == null || message.messageId() == null || message.messageId().isBlank()
+                || message.contentId() == null || message.eventVersion() <= 0) {
+            throw new ServiceException(400, "搜索索引消息参数不完整");
         }
-        if (url == null || !url.startsWith("/") || url.startsWith("//")) {
-            throw new ServiceException("公开索引地址必须是站内相对地址");
+        SearchInbox inbox = new SearchInbox();
+        inbox.setMessageId(message.messageId());
+        inbox.setStatus("PROCESSING");
+        try {
+            inboxMapper.insert(inbox);
+        } catch (DuplicateKeyException ignored) {
+            return;
         }
-        SearchDocument document = new SearchDocument();
-        document.setContentType(type);
-        document.setContentId(contentId);
-        document.setTitle(clean(title, 255));
-        document.setSummary(clean(summary, 10000));
-        document.setContent(clean(content, 1000000));
-        document.setUrl(url);
-        documentMapper.upsert(document);
+        synchronize(message.contentType(), message.contentId(), message.eventVersion());
+        inboxMapper.update(null, new LambdaUpdateWrapper<SearchInbox>().eq(SearchInbox::getId, inbox.getId())
+                .set(SearchInbox::getStatus, "SUCCESS").set(SearchInbox::getProcessedAt, LocalDateTime.now()));
     }
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void remove(String contentType, Long contentId) {
-        documentMapper.delete(new LambdaQueryWrapper<SearchDocument>()
-                .eq(SearchDocument::getContentType, contentType)
-                .eq(SearchDocument::getContentId, contentId));
-    }
-
-    @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void synchronize(String contentType, Long contentId) {
+    public void synchronize(String contentType, Long contentId, long eventVersion) {
         switch (contentType) {
-            case "BLOG" -> synchronizeBlog(contentId);
-            case "RESOURCE" -> synchronizeResource(contentId);
-            case "FORUM_TOPIC" -> synchronizeTopic(contentId);
-            default -> { }
+            case "BLOG" -> synchronizeBlog(contentId, eventVersion);
+            case "FORUM_TOPIC" -> synchronizeTopic(contentId, eventVersion);
+            default -> throw new ServiceException(400, "不支持的搜索索引内容");
         }
     }
 
-    private void synchronizeBlog(Long articleId) {
+    private void synchronizeBlog(Long articleId, long eventVersion) {
         BlogArticle article = articleMapper.selectById(articleId);
         if (article == null || article.getDeleted() == 1 || "OFFLINE".equals(article.getStatus())
                 || article.getPublishedVersionNo() == null) {
-            remove("BLOG", articleId);
+            indexRepository.delete("BLOG", articleId, eventVersion);
             return;
         }
         BlogArticleVersion version = articleVersionMapper.selectOne(new LambdaQueryWrapper<BlogArticleVersion>()
                 .eq(BlogArticleVersion::getArticleId, articleId)
                 .eq(BlogArticleVersion::getVersionNo, article.getPublishedVersionNo()).last("LIMIT 1"));
         if (version == null) {
-            remove("BLOG", articleId);
+            indexRepository.delete("BLOG", articleId, eventVersion);
             return;
         }
-        indexPublic("BLOG", articleId, version.getTitle(), version.getSummary(),
-                version.getContent(), "/blogs/" + articleId);
+        indexRepository.save(new SearchIndexDocument("BLOG", articleId, clean(version.getTitle(), 255),
+                clean(version.getSummary(), 10000), clean(version.getContent(), 1000000),
+                "/blogs/" + articleId), eventVersion);
     }
 
-    private void synchronizeResource(Long resourceId) {
-        ResourceInfo resource = resourceInfoMapper.selectById(resourceId);
-        if (resource == null || resource.getDeleted() == 1 || resource.getOnline() != 1
-                || resource.getInvalid() == 1 || resource.getPublishedVersionNo() == null) {
-            remove("RESOURCE", resourceId);
-            return;
-        }
-        ResourceVersion version = resourceVersionMapper.selectOne(new LambdaQueryWrapper<ResourceVersion>()
-                .eq(ResourceVersion::getResourceId, resourceId)
-                .eq(ResourceVersion::getVersionNo, resource.getPublishedVersionNo()).last("LIMIT 1"));
-        if (version == null) {
-            remove("RESOURCE", resourceId);
-            return;
-        }
-        indexPublic("RESOURCE", resourceId, version.getTitle(), version.getSummary(),
-                version.getDescription(), "/resources/" + resourceId);
-    }
-
-    private void synchronizeTopic(Long topicId) {
+    private void synchronizeTopic(Long topicId, long eventVersion) {
         Topic topic = topicMapper.selectById(topicId);
         if (topic == null || topic.getDeleted() == 1 || "OFFLINE".equals(topic.getStatus())
                 || topic.getPublishedVersionNo() == null) {
-            remove("FORUM_TOPIC", topicId);
+            indexRepository.delete("FORUM_TOPIC", topicId, eventVersion);
             return;
         }
         TopicVersion version = topicVersionMapper.selectOne(new LambdaQueryWrapper<TopicVersion>()
                 .eq(TopicVersion::getTopicId, topicId)
                 .eq(TopicVersion::getVersionNo, topic.getPublishedVersionNo()).last("LIMIT 1"));
         if (version == null) {
-            remove("FORUM_TOPIC", topicId);
+            indexRepository.delete("FORUM_TOPIC", topicId, eventVersion);
             return;
         }
-        indexPublic("FORUM_TOPIC", topicId, version.getTitle(), "", version.getContent(),
-                "/forum/topics/" + topicId);
+        indexRepository.save(new SearchIndexDocument("FORUM_TOPIC", topicId, clean(version.getTitle(), 255),
+                "", clean(version.getContent(), 1000000), "/forum/topics/" + topicId), eventVersion);
     }
 
     private static String clean(String text, int maxLength) {
