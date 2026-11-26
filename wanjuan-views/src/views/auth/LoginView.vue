@@ -101,7 +101,8 @@ async function submit() {
         </div>
       </a-form-item>
       <div class="form-between">
-        <span>没有账号？<router-link to="/register">立即注册</router-link></span>
+        <span v-if="mode === 'email'">未注册邮箱验证后将自动创建账号</span>
+        <span v-else>没有账号？<router-link to="/register">立即注册</router-link></span>
         <router-link to="/reset-password">忘记密码？</router-link>
       </div>
       <a-button type="primary" html-type="submit" size="large" block :loading="submitting">登录</a-button>

@@ -89,12 +89,15 @@ public class AuthService {
         }
     }
 
+    @Transactional
     public TokenResponse loginByEmail(EmailLoginRequest request) {
         String email=request.email().toLowerCase(Locale.ROOT); limiter.check("email-login:ip:"+ip(),20,Duration.ofMinutes(10));
         limiter.checkFailures("email-login:"+email,5); captchaService.verify(request.captchaId(),request.captchaCode());
         try {
             codeService.consumeEmail("LOGIN",email,request.emailCode());
-            UserAccount user=requiredUser(new LambdaQueryWrapper<UserAccount>().eq(UserAccount::getEmail,email),"邮箱未注册，请先注册");
+            UserAccount user=userMapper.selectOne(new LambdaQueryWrapper<UserAccount>().eq(UserAccount::getEmail,email));
+            if (user==null) user=createEmailUser(email);
+            if (user.getStatus()!=1) throw new ServiceException(403,"账号已被停用");
             limiter.clearFailures("email-login:"+email); logLogin("USER",user.getId(),email,"EMAIL",true,null);
             return tokens(refreshService.issue("USER",user.getId(),user.getTokenVersion()));
         } catch (ServiceException e) { limiter.failure("email-login:"+email,5,Duration.ofMinutes(15)); logLogin("USER",null,email,"EMAIL",false,e.getMessage()); throw e; }
@@ -154,6 +157,18 @@ public class AuthService {
             log.warn("Unable to create avatar access URL, fileId={}",fileId);
             return fallback;
         }
+    }
+
+    private UserAccount createEmailUser(String email) {
+        String nickname=email.substring(0,email.indexOf('@')).replaceAll("[^A-Za-z0-9_]","_");
+        if (nickname.isBlank()) nickname="user";
+        nickname=nickname.substring(0,Math.min(32,nickname.length()));
+        String username=nickname+"_"+java.util.UUID.randomUUID().toString().replace("-","").substring(0,8);
+        UserAccount user=new UserAccount(); user.setUsername(username); user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(java.util.UUID.randomUUID().toString())); user.setStatus(1); user.setTokenVersion(0); userMapper.insert(user);
+        UserProfile profile=new UserProfile(); profile.setUserId(user.getId()); profile.setNickname(nickname); profile.setGender(0);
+        profile.setCreateTime(LocalDateTime.now()); profile.setUpdateTime(LocalDateTime.now()); profileMapper.insert(profile);
+        return user;
     }
 
     private UserAccount requiredUser(LambdaQueryWrapper<UserAccount> wrapper,String message) {
