@@ -153,6 +153,10 @@ CREATE TABLE operation_log
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 INSERT INTO sys_role(id, name, code, description)
 VALUES (1, '超级管理员', 'SUPER_ADMIN', '拥有全部系统权限');
+INSERT INTO sys_admin(id, username, nickname, password)
+VALUES (1, 'admin', '系统管理员', '$2b$12$lJA9ahmb2pCgbHQcUhAwOeS5ODTnvdI3MlPXojRHYU7/8lTPCadlO');
+INSERT INTO sys_admin_role(admin_id, role_id)
+VALUES (1, 1);
 INSERT INTO sys_permission(id, parent_id, name, code, type, path, sort_order)
 VALUES (1, 0, '系统管理', 'system', 'MENU', '/system', 1),
        (2, 1, '管理员管理', 'system:admin', 'MENU', '/system/admins', 1),

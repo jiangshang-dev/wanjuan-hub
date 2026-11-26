@@ -1568,6 +1568,7 @@ CREATE TABLE `sys_admin` (
 
 LOCK TABLES `sys_admin` WRITE;
 /*!40000 ALTER TABLE `sys_admin` DISABLE KEYS */;
+INSERT INTO `sys_admin` (`id`,`username`,`nickname`,`email`,`password`,`status`,`token_version`) VALUES (1,'admin','系统管理员',NULL,'$2b$12$lJA9ahmb2pCgbHQcUhAwOeS5ODTnvdI3MlPXojRHYU7/8lTPCadlO',1,0);
 /*!40000 ALTER TABLE `sys_admin` ENABLE KEYS */;
 UNLOCK TABLES;
 DROP TABLE IF EXISTS `sys_admin_role`;
@@ -1584,6 +1585,7 @@ CREATE TABLE `sys_admin_role` (
 
 LOCK TABLES `sys_admin_role` WRITE;
 /*!40000 ALTER TABLE `sys_admin_role` DISABLE KEYS */;
+INSERT INTO `sys_admin_role` (`admin_id`,`role_id`) VALUES (1,1);
 /*!40000 ALTER TABLE `sys_admin_role` ENABLE KEYS */;
 UNLOCK TABLES;
 DROP TABLE IF EXISTS `sys_config`;
